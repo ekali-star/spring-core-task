@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -42,5 +43,23 @@ public class TrainingService {
 
     public Collection<Training> findAll() {
         return trainingDao.findAll();
+    }
+
+    public Collection<Training> findByTraineeId(long l) {
+        return trainingDao.findAll().stream()
+                .filter(t -> t.getTraineeId() == l)
+                .toList();
+    }
+
+    public Collection<Training> findByTrainerId(long l) {
+        return trainingDao.findAll().stream()
+                .filter(t -> t.getTrainerId() == l)
+                .toList();
+    }
+
+    public Collection<Training> findByDate(LocalDate today) {
+        return trainingDao.findAll().stream()
+                .filter(t -> t.getDate().equals(today))
+                .toList();
     }
 }
