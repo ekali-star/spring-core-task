@@ -7,4 +7,6 @@ public class Trainer extends User{
     public Long getUserID() {return userID;}
     public void setSpecialization(String specialization) {this.specialization = specialization;}
     public void setUserID(Long userID) {this.userID = userID;}
+    public void setUserId(long l) {this.userID = l;}
+    public Long getUserId() {return userID;}
 }
