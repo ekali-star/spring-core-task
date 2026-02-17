@@ -23,5 +23,6 @@ public class Training {
     public void setTrainingType(String trainingType) {this.trainingType = trainingType;}
     public void setTrainingDate(LocalDate trainingDate) {this.trainingDate = trainingDate;}
     public void setTrainingDuration(int trainingDuration) {this.trainingDuration = trainingDuration;}
-
+    public void setTrainerId(long l) {this.trainerID = l;}
+    public void setTraineeId(long l) {this.traineeID = l;}
 }
