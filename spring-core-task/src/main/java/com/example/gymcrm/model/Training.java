@@ -25,4 +25,10 @@ public class Training {
     public void setTrainingDuration(int trainingDuration) {this.trainingDuration = trainingDuration;}
     public void setTrainerId(long l) {this.trainerID = l;}
     public void setTraineeId(long l) {this.traineeID = l;}
+
+    public long getTraineeId() {return traineeID;}
+
+    public long getTrainerId() {return trainerID;}
+
+    public Object getDate() {return trainingDate;}
 }
