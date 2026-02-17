@@ -10,4 +10,18 @@ public class Training {
     private String trainingType;
     private LocalDate trainingDate;
     private int trainingDuration;
+
+    public Long getTraineeID() {return traineeID;}
+    public Long getTrainerID() {return trainerID;}
+    public String getTrainingName() {return trainingName;}
+    public String getTrainingType() {return trainingType;}
+    public LocalDate getTrainingDate() {return trainingDate;}
+    public int getTrainingDuration() {return trainingDuration;}
+    public void setTraineeID(Long traineeID) {this.traineeID = traineeID;}
+    public void setTrainerID(Long trainerID) {this.trainerID = trainerID;}
+    public void setTrainingName(String trainingName) {this.trainingName = trainingName;}
+    public void setTrainingType(String trainingType) {this.trainingType = trainingType;}
+    public void setTrainingDate(LocalDate trainingDate) {this.trainingDate = trainingDate;}
+    public void setTrainingDuration(int trainingDuration) {this.trainingDuration = trainingDuration;}
+
 }
