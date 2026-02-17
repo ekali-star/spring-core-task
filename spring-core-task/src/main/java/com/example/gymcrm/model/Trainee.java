@@ -12,4 +12,6 @@ public class Trainee extends User {
     public void setDateOfBirth(LocalDate dateOfBirth) {this.dateOfBirth = dateOfBirth;}
     public void setAddress(String address) {this.address = address;}
     public void setUserID(Long userID) {this.userID = userID;}
+    public void setUserId(long l) {this.userID = l;}
+    public Long getUserId() {return userID;}
 }

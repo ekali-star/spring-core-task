@@ -16,4 +16,5 @@ public abstract class User {
     public void setPassword(String password) {this.password = password;}
     public boolean isActive() {return isActive;}
     public void setActive(boolean active) {isActive = active;}
+
 }
