@@ -1,4 +1,3 @@
-// src/test/java/com/example/gymcrm/service/TrainerServiceTest.java
 package com.example.gymcrm.service;
 
 import com.example.gymcrm.dao.TrainerDao;
@@ -43,10 +42,11 @@ class TrainerServiceTest {
 
         Trainer result = trainerService.create(trainer);
 
-        assertNotNull(result.getUserId());
+        assertNotNull(result.getId());
         assertEquals("Jane.Smith", result.getUsername());
         assertNotNull(result.getPassword());
         assertEquals(10, result.getPassword().length());
+        assertEquals("Yoga", result.getSpecialization());
         assertTrue(result.isActive());
         verify(trainerDao).save(anyLong(), any(Trainer.class));
     }
@@ -66,7 +66,12 @@ class TrainerServiceTest {
     @Test
     void update_ShouldUpdateExistingTrainer() {
         Long id = 1L;
-        when(trainerDao.findById(id)).thenReturn(new Trainer());
+        Trainer existing = new Trainer();
+        existing.setId(id);
+        existing.setUsername("Jane.Smith");
+        existing.setPassword("oldpass");
+
+        when(trainerDao.findById(id)).thenReturn(existing);
 
         trainerService.update(id, trainer);
 

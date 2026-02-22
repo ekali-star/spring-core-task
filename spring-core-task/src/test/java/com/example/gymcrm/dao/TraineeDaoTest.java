@@ -32,7 +32,7 @@ class TraineeDaoTest {
     void setUp() {
         storageMap = new HashMap<>();
         trainee = new Trainee();
-        trainee.setUserId(1L);
+        trainee.setId(1L);
         trainee.setFirstName("John");
         trainee.setLastName("Doe");
         when(traineeStorage.getStorage()).thenReturn(storageMap);
@@ -41,14 +41,18 @@ class TraineeDaoTest {
     @Test
     void save_ShouldAddTraineeToStorage() {
         traineeDao.save(1L, trainee);
+
         assertTrue(storageMap.containsKey(1L));
         assertEquals(trainee, storageMap.get(1L));
+        verify(traineeStorage, times(1)).getStorage();
     }
 
     @Test
     void findById_ShouldReturnTrainee_WhenExists() {
         storageMap.put(1L, trainee);
+
         Trainee result = traineeDao.findById(1L);
+
         assertEquals(trainee, result);
     }
 
@@ -62,7 +66,9 @@ class TraineeDaoTest {
     @Test
     void delete_ShouldRemoveTraineeFromStorage() {
         storageMap.put(1L, trainee);
+
         traineeDao.delete(1L);
+
         assertFalse(storageMap.containsKey(1L));
     }
 
@@ -70,10 +76,12 @@ class TraineeDaoTest {
     void findAll_ShouldReturnAllTrainees() {
         storageMap.put(1L, trainee);
         Trainee trainee2 = new Trainee();
-        trainee2.setUserId(2L);
+        trainee2.setId(2L);
         trainee2.setFirstName("Jane");
         storageMap.put(2L, trainee2);
+
         Collection<Trainee> result = traineeDao.findAll();
+
         assertEquals(2, result.size());
         assertTrue(result.contains(trainee));
         assertTrue(result.contains(trainee2));

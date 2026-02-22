@@ -15,7 +15,9 @@ public class TrainerDao {
     public void setStorage(TrainerStorage storage) {
         this.storage = storage;
     }
+
     public void save(Long id, Trainer trainer) {
+        trainer.setId(id);
         storage.getStorage().put(id, trainer);
     }
 
@@ -29,5 +31,10 @@ public class TrainerDao {
 
     public Collection<Trainer> findAll() {
         return storage.getStorage().values();
+    }
+
+    public boolean existsByUsername(String username) {
+        return storage.getStorage().values().stream()
+                .anyMatch(t -> username.equals(t.getUsername()));
     }
 }

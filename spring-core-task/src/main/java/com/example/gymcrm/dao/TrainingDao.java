@@ -15,7 +15,9 @@ public class TrainingDao {
     public void setStorage(TrainingStorage storage) {
         this.storage = storage;
     }
+
     public void save(Long id, Training training) {
+        training.setId(id);
         storage.getStorage().put(id, training);
     }
 
