@@ -20,6 +20,7 @@ class TrainerStorageTest {
     @Test
     void getStorage_ShouldReturnEmptyMap_WhenNoTrainersAdded() {
         Map<Long, Trainer> storage = trainerStorage.getStorage();
+
         assertNotNull(storage);
         assertTrue(storage.isEmpty());
     }
@@ -28,9 +29,11 @@ class TrainerStorageTest {
     void getStorage_ShouldReturnMapWithTrainers_WhenTrainersAdded() {
         Map<Long, Trainer> storage = trainerStorage.getStorage();
         Trainer trainer = new Trainer();
-        trainer.setUserId(1L);
+        trainer.setId(1L);
         trainer.setFirstName("Jane");
+
         storage.put(1L, trainer);
+
         assertEquals(1, storage.size());
         assertEquals(trainer, storage.get(1L));
     }
@@ -39,6 +42,7 @@ class TrainerStorageTest {
     void getStorage_ShouldReturnSameInstance_WhenCalledMultipleTimes() {
         Map<Long, Trainer> storage1 = trainerStorage.getStorage();
         Map<Long, Trainer> storage2 = trainerStorage.getStorage();
+
         assertSame(storage1, storage2);
     }
 }

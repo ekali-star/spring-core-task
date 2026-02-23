@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-        import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TrainerDaoTest {
@@ -32,7 +32,7 @@ class TrainerDaoTest {
     void setUp() {
         storageMap = new HashMap<>();
         trainer = new Trainer();
-        trainer.setUserId(1L);
+        trainer.setId(1L);
         trainer.setFirstName("Jane");
         trainer.setLastName("Smith");
         trainer.setSpecialization("Yoga");
@@ -45,25 +45,31 @@ class TrainerDaoTest {
 
         assertTrue(storageMap.containsKey(1L));
         assertEquals(trainer, storageMap.get(1L));
+        verify(trainerStorage, times(1)).getStorage();
     }
 
     @Test
     void findById_ShouldReturnTrainer_WhenExists() {
         storageMap.put(1L, trainer);
+
         Trainer result = trainerDao.findById(1L);
+
         assertEquals(trainer, result);
     }
 
     @Test
     void findById_ShouldReturnNull_WhenNotExists() {
         Trainer result = trainerDao.findById(999L);
+
         assertNull(result);
     }
 
     @Test
     void delete_ShouldRemoveTrainerFromStorage() {
         storageMap.put(1L, trainer);
+
         trainerDao.delete(1L);
+
         assertFalse(storageMap.containsKey(1L));
     }
 
@@ -71,10 +77,12 @@ class TrainerDaoTest {
     void findAll_ShouldReturnAllTrainers() {
         storageMap.put(1L, trainer);
         Trainer trainer2 = new Trainer();
-        trainer2.setUserId(2L);
+        trainer2.setId(2L);
         trainer2.setFirstName("Mike");
         storageMap.put(2L, trainer2);
+
         Collection<Trainer> result = trainerDao.findAll();
+
         assertEquals(2, result.size());
         assertTrue(result.contains(trainer));
         assertTrue(result.contains(trainer2));

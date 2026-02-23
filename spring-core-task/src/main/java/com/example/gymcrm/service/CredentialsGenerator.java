@@ -4,10 +4,11 @@ import com.example.gymcrm.model.User;
 
 import java.security.SecureRandom;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 public class CredentialsGenerator {
     private static final String CHARS =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
 
     private static final SecureRandom random = new SecureRandom();
 
@@ -26,24 +27,16 @@ public class CredentialsGenerator {
         String base = firstName + "." + lastName;
         String candidate = base;
 
-        int counter = 0;
-        boolean exists;
+        Collection<String> existingUsernames = existingUsers.stream()
+                .map(User::getUsername)
+                .collect(Collectors.toSet());
 
-        do {
-            exists = false;
-            for (User u : existingUsers) {
-                if (candidate.equals(u.getUsername())) {
-                    exists = true;
-                    break;
-                }
-            }
+        int counter = 1;
 
-            if (exists) {
-                counter++;
-                candidate = base + counter;
-            }
-
-        } while (exists);
+        while (existingUsernames.contains(candidate)) {
+            candidate = base + counter;
+            counter++;
+        }
 
         return candidate;
     }

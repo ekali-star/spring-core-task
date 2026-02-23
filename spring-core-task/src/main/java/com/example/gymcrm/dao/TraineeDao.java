@@ -15,7 +15,9 @@ public class TraineeDao {
     public void setStorage(TraineeStorage storage) {
         this.storage = storage;
     }
+
     public void save(Long id, Trainee trainee) {
+        trainee.setId(id);
         storage.getStorage().put(id, trainee);
     }
 
@@ -31,4 +33,8 @@ public class TraineeDao {
         return storage.getStorage().values();
     }
 
+    public boolean existsByUsername(String username) {
+        return storage.getStorage().values().stream()
+                .anyMatch(t -> username.equals(t.getUsername()));
+    }
 }

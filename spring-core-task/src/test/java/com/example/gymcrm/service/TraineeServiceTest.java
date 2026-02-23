@@ -1,4 +1,3 @@
-// src/test/java/com/example/gymcrm/service/TraineeServiceTest.java
 package com.example.gymcrm.service;
 
 import com.example.gymcrm.dao.TraineeDao;
@@ -42,8 +41,10 @@ class TraineeServiceTest {
     @Test
     void create_ShouldGenerateUsernameAndPassword() {
         when(traineeDao.findAll()).thenReturn(Collections.emptyList());
+
         Trainee result = traineeService.create(trainee);
-        assertNotNull(result.getUserId());
+
+        assertNotNull(result.getId());
         assertEquals("John.Doe", result.getUsername());
         assertNotNull(result.getPassword());
         assertEquals(10, result.getPassword().length());
@@ -56,7 +57,9 @@ class TraineeServiceTest {
         Trainee existing = new Trainee();
         existing.setUsername("John.Doe");
         when(traineeDao.findAll()).thenReturn(Collections.singletonList(existing));
+
         Trainee result = traineeService.create(trainee);
+
         assertEquals("John.Doe1", result.getUsername());
         verify(traineeDao).save(anyLong(), any(Trainee.class));
     }
@@ -64,8 +67,15 @@ class TraineeServiceTest {
     @Test
     void update_ShouldUpdateExistingTrainee() {
         Long id = 1L;
-        when(traineeDao.findById(id)).thenReturn(new Trainee());
+        Trainee existing = new Trainee();
+        existing.setId(id);
+        existing.setUsername("John.Doe");
+        existing.setPassword("oldpass");
+
+        when(traineeDao.findById(id)).thenReturn(existing);
+
         traineeService.update(id, trainee);
+
         verify(traineeDao).save(eq(id), eq(trainee));
     }
 
@@ -73,21 +83,39 @@ class TraineeServiceTest {
     void update_ShouldThrowException_WhenTraineeNotFound() {
         Long id = 1L;
         when(traineeDao.findById(id)).thenReturn(null);
+
         assertThrows(IllegalArgumentException.class, () -> traineeService.update(id, trainee));
     }
 
     @Test
     void delete_ShouldDeleteTrainee() {
         Long id = 1L;
+        Trainee existing = new Trainee();
+        existing.setId(id);
+        when(traineeDao.findById(id)).thenReturn(existing);
+
         traineeService.delete(id);
+
         verify(traineeDao).delete(id);
+    }
+
+    @Test
+    void delete_ShouldNotThrow_WhenTraineeNotFound() {
+        Long id = 1L;
+        when(traineeDao.findById(id)).thenReturn(null);
+
+        traineeService.delete(id);
+
+        verify(traineeDao, never()).delete(id);
     }
 
     @Test
     void findById_ShouldReturnTrainee() {
         Long id = 1L;
         when(traineeDao.findById(id)).thenReturn(trainee);
+
         Trainee result = traineeService.findById(id);
+
         assertEquals(trainee, result);
     }
 
@@ -95,7 +123,9 @@ class TraineeServiceTest {
     void findAll_ShouldReturnAllTrainees() {
         Collection<Trainee> trainees = Arrays.asList(trainee, new Trainee());
         when(traineeDao.findAll()).thenReturn(trainees);
+
         Collection<Trainee> result = traineeService.findAll();
+
         assertEquals(2, result.size());
     }
 }
