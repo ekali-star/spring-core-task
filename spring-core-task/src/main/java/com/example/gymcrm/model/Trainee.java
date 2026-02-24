@@ -8,7 +8,6 @@ public class Trainee extends User {
     private LocalDate dateOfBirth;
     private String address;
     private Long id;
-    private List<Training> trainings = new ArrayList<>();
 
     public LocalDate getDateOfBirth() {
         return dateOfBirth;
@@ -34,15 +33,4 @@ public class Trainee extends User {
         this.id = id;
     }
 
-    public List<Training> getTrainings() {
-        return trainings;
-    }
-
-    public void setTrainings(List<Training> trainings) {
-        this.trainings = trainings;
-    }
-
-    public void addTraining(Training training) {
-        trainings.add(training);
-    }
 }

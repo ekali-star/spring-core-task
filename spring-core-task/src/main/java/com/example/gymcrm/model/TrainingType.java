@@ -1,5 +1,7 @@
 package com.example.gymcrm.model;
 
+import java.util.Arrays;
+
 public enum TrainingType {
     CARDIO("Cardio"),
     STRENGTH("Strength"),
@@ -21,12 +23,9 @@ public enum TrainingType {
     }
 
     public static TrainingType fromString(String text) {
-        for (TrainingType type : TrainingType.values()) {
-            if (type.displayName.equalsIgnoreCase(text) ||
-                    type.name().equalsIgnoreCase(text)) {
-                return type;
-            }
-        }
-        return null;
+        return Arrays.stream(TrainingType.values()).filter(type -> type.displayName.equalsIgnoreCase(text) ||
+                type.name().equalsIgnoreCase(text))
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -51,30 +50,6 @@ public class TrainingService {
     public Collection<Training> findAll() {
         Collection<Training> trainings = trainingDao.findAll();
         log.debug("Retrieved {} trainings from storage", trainings.size());
-        return trainings;
-    }
-
-    public Collection<Training> findByTraineeId(Long traineeId) {
-        Collection<Training> trainings = trainingDao.findAll().stream()
-                .filter(t -> t.getTraineeId() != null && t.getTraineeId().equals(traineeId))
-                .toList();
-        log.debug("Found {} trainings for trainee ID: {}", trainings.size(), traineeId);
-        return trainings;
-    }
-
-    public Collection<Training> findByTrainerId(Long trainerId) {
-        Collection<Training> trainings = trainingDao.findAll().stream()
-                .filter(t -> t.getTrainerId() != null && t.getTrainerId().equals(trainerId))
-                .toList();
-        log.debug("Found {} trainings for trainer ID: {}", trainings.size(), trainerId);
-        return trainings;
-    }
-
-    public Collection<Training> findByDate(LocalDate date) {
-        Collection<Training> trainings = trainingDao.findAll().stream()
-                .filter(t -> t.getTrainingDate() != null && t.getTrainingDate().equals(date))
-                .toList();
-        log.debug("Found {} trainings for date: {}", trainings.size(), date);
         return trainings;
     }
 }

@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
 
 @Repository
-public class TrainerDao {
+public class TrainerDao extends UserDao<Trainer> {
     private TrainerStorage storage;
 
     @Autowired
@@ -16,25 +18,13 @@ public class TrainerDao {
         this.storage = storage;
     }
 
-    public void save(Long id, Trainer trainer) {
+    @Override
+    protected Map<Long, Trainer> getStorage() {
+        return storage.getStorage();
+    }
+
+    @Override
+    protected void setId(Trainer trainer, Long id) {
         trainer.setId(id);
-        storage.getStorage().put(id, trainer);
-    }
-
-    public Trainer findById(Long id) {
-        return storage.getStorage().get(id);
-    }
-
-    public void delete(Long id) {
-        storage.getStorage().remove(id);
-    }
-
-    public Collection<Trainer> findAll() {
-        return storage.getStorage().values();
-    }
-
-    public boolean existsByUsername(String username) {
-        return storage.getStorage().values().stream()
-                .anyMatch(t -> username.equals(t.getUsername()));
     }
 }

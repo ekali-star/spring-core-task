@@ -13,11 +13,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingServiceTest {
@@ -83,62 +84,4 @@ class TrainingServiceTest {
         assertEquals(2, result.size());
     }
 
-    @Test
-    void findByTraineeId_ShouldReturnTrainingsForTrainee() {
-        Training training2 = new Training();
-        training2.setTraineeId(2L);
-        training2.setTrainerId(1L);
-        training2.setTrainingType(TrainingType.CARDIO);
-
-        when(trainingDao.findAll()).thenReturn(Arrays.asList(training, training2));
-
-        Collection<Training> result = trainingService.findByTraineeId(1L);
-
-        assertEquals(1, result.size());
-        assertEquals(1L, result.iterator().next().getTraineeId());
-        assertEquals(TrainingType.YOGA, result.iterator().next().getTrainingType());
-    }
-
-    @Test
-    void findByTrainerId_ShouldReturnTrainingsForTrainer() {
-        Training training2 = new Training();
-        training2.setTraineeId(1L);
-        training2.setTrainerId(2L);
-        training2.setTrainingType(TrainingType.CARDIO);
-
-        when(trainingDao.findAll()).thenReturn(Arrays.asList(training, training2));
-
-        Collection<Training> result = trainingService.findByTrainerId(1L);
-
-        assertEquals(1, result.size());
-        assertEquals(1L, result.iterator().next().getTrainerId());
-    }
-
-    @Test
-    void findByDate_ShouldReturnTrainingsOnDate() {
-        LocalDate today = LocalDate.now();
-        Training training2 = new Training();
-        training2.setTrainingDate(today.plusDays(1));
-        training2.setTrainingType(TrainingType.CARDIO);
-
-        when(trainingDao.findAll()).thenReturn(Arrays.asList(training, training2));
-
-        Collection<Training> result = trainingService.findByDate(today);
-
-        assertEquals(1, result.size());
-        assertEquals(today, result.iterator().next().getTrainingDate());
-    }
-
-    @Test
-    void findByDate_ShouldReturnEmptyList_WhenNoTrainingsOnDate() {
-        LocalDate today = LocalDate.now();
-        Training training2 = new Training();
-        training2.setTrainingDate(today.plusDays(1));
-
-        when(trainingDao.findAll()).thenReturn(List.of(training2));
-
-        Collection<Training> result = trainingService.findByDate(today);
-
-        assertTrue(result.isEmpty());
-    }
 }

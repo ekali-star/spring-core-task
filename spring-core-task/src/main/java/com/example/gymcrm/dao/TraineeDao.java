@@ -5,10 +5,10 @@ import com.example.gymcrm.storage.TraineeStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
+import java.util.Map;
 
 @Repository
-public class TraineeDao {
+public class TraineeDao extends UserDao<Trainee> {
     private TraineeStorage storage;
 
     @Autowired
@@ -16,25 +16,13 @@ public class TraineeDao {
         this.storage = storage;
     }
 
-    public void save(Long id, Trainee trainee) {
+    @Override
+    protected Map<Long, Trainee> getStorage() {
+        return storage.getStorage();
+    }
+
+    @Override
+    protected void setId(Trainee trainee, Long id) {
         trainee.setId(id);
-        storage.getStorage().put(id, trainee);
-    }
-
-    public Trainee findById(Long id) {
-        return storage.getStorage().get(id);
-    }
-
-    public void delete(Long id) {
-        storage.getStorage().remove(id);
-    }
-
-    public Collection<Trainee> findAll() {
-        return storage.getStorage().values();
-    }
-
-    public boolean existsByUsername(String username) {
-        return storage.getStorage().values().stream()
-                .anyMatch(t -> username.equals(t.getUsername()));
     }
 }

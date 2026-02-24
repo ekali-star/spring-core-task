@@ -1,6 +1,8 @@
 package com.example.gymcrm.facade;
 
-import com.example.gymcrm.model.*;
+import com.example.gymcrm.model.Trainee;
+import com.example.gymcrm.model.Trainer;
+import com.example.gymcrm.model.Training;
 import com.example.gymcrm.service.TraineeService;
 import com.example.gymcrm.service.TrainerService;
 import com.example.gymcrm.service.TrainingService;
@@ -9,9 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -40,6 +39,7 @@ class GymFacadeTest {
 
         assertNotNull(result);
         verify(traineeService).create(trainee);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -52,6 +52,7 @@ class GymFacadeTest {
 
         assertEquals(trainee, result);
         verify(traineeService).update(id, trainee);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -61,6 +62,7 @@ class GymFacadeTest {
         gymFacade.deleteTrainee(id);
 
         verify(traineeService).delete(id);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -72,16 +74,8 @@ class GymFacadeTest {
         Trainee result = gymFacade.getTrainee(id);
 
         assertEquals(trainee, result);
-    }
-
-    @Test
-    void getAllTrainees_ShouldDelegateToService() {
-        List<Trainee> trainees = List.of(new Trainee(), new Trainee());
-        when(traineeService.findAll()).thenReturn(trainees);
-
-        var result = gymFacade.getAllTrainees();
-
-        assertEquals(2, result.size());
+        verify(traineeService).findById(id);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -93,6 +87,7 @@ class GymFacadeTest {
 
         assertNotNull(result);
         verify(trainerService).create(trainer);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -105,6 +100,7 @@ class GymFacadeTest {
 
         assertEquals(trainer, result);
         verify(trainerService).update(id, trainer);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -116,6 +112,8 @@ class GymFacadeTest {
         Trainer result = gymFacade.getTrainer(id);
 
         assertEquals(trainer, result);
+        verify(trainerService).findById(id);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -127,6 +125,7 @@ class GymFacadeTest {
 
         assertNotNull(result);
         verify(trainingService).create(training);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
@@ -138,38 +137,7 @@ class GymFacadeTest {
         Training result = gymFacade.getTraining(id);
 
         assertEquals(training, result);
-    }
-
-    @Test
-    void getTrainingsByTrainee_ShouldDelegateToService() {
-        Long traineeId = 1L;
-        List<Training> trainings = List.of(new Training());
-        when(trainingService.findByTraineeId(traineeId)).thenReturn(trainings);
-
-        var result = gymFacade.getTrainingsByTrainee(traineeId);
-
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    void getTrainingsByTrainer_ShouldDelegateToService() {
-        Long trainerId = 1L;
-        List<Training> trainings = List.of(new Training());
-        when(trainingService.findByTrainerId(trainerId)).thenReturn(trainings);
-
-        var result = gymFacade.getTrainingsByTrainer(trainerId);
-
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    void getTrainingsByDate_ShouldDelegateToService() {
-        LocalDate date = LocalDate.now();
-        List<Training> trainings = List.of(new Training());
-        when(trainingService.findByDate(date)).thenReturn(trainings);
-
-        var result = gymFacade.getTrainingsByDate(date);
-
-        assertEquals(1, result.size());
+        verify(trainingService).findById(id);
+        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 }

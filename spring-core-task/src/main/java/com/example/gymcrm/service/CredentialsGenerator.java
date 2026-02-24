@@ -31,11 +31,8 @@ public class CredentialsGenerator {
                 .map(User::getUsername)
                 .collect(Collectors.toSet());
 
-        int counter = 1;
-
-        while (existingUsernames.contains(candidate)) {
+        for (int counter = 1; existingUsernames.contains(candidate); counter++) {
             candidate = base + counter;
-            counter++;
         }
 
         return candidate;

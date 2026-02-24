@@ -73,15 +73,4 @@ public class GymFacade {
         return trainingService.findAll();
     }
 
-    public Collection<Training> getTrainingsByTrainee(Long traineeId) {
-        return trainingService.findByTraineeId(traineeId);
-    }
-
-    public Collection<Training> getTrainingsByTrainer(Long trainerId) {
-        return trainingService.findByTrainerId(trainerId);
-    }
-
-    public Collection<Training> getTrainingsByDate(LocalDate date) {
-        return trainingService.findByDate(date);
-    }
 }

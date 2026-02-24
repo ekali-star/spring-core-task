@@ -6,7 +6,6 @@ import java.util.List;
 public class Trainer extends User {
     private String specialization;
     private Long id;
-    private List<Training> trainings = new ArrayList<>();
 
     public String getSpecialization() {
         return specialization;
@@ -24,15 +23,4 @@ public class Trainer extends User {
         this.id = id;
     }
 
-    public List<Training> getTrainings() {
-        return trainings;
-    }
-
-    public void setTrainings(List<Training> trainings) {
-        this.trainings = trainings;
-    }
-
-    public void addTraining(Training training) {
-        trainings.add(training);
-    }
 }
