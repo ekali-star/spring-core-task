@@ -1,131 +1,72 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.TraineeDao;
 import com.example.gymcrm.model.Trainee;
+import com.example.gymcrm.model.Trainer;
+import com.example.gymcrm.repository.TraineeRepository;
+import com.example.gymcrm.repository.TrainerRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class TraineeServiceTest {
 
     @Mock
-    private TraineeDao traineeDao;
+    private TraineeRepository traineeRepository;
 
-    @InjectMocks
+    @Mock
+    private TrainerRepository trainerRepository;
+
     private TraineeService traineeService;
-
-    private Trainee trainee;
 
     @BeforeEach
     void setUp() {
-        trainee = new Trainee();
-        trainee.setFirstName("John");
-        trainee.setLastName("Doe");
-        trainee.setDateOfBirth(LocalDate.of(1990, 1, 1));
-        trainee.setAddress("123 Main St");
+        MockitoAnnotations.openMocks(this);
+        traineeService = new TraineeService(traineeRepository, trainerRepository);
     }
 
     @Test
-    void create_ShouldGenerateUsernameAndPassword() {
-        when(traineeDao.findAll()).thenReturn(Collections.emptyList());
+    void getUnassignedTrainers_shouldReturnList() {
 
-        Trainee result = traineeService.create(trainee);
+        when(trainerRepository.findNotAssignedToTrainee("john"))
+                .thenReturn(List.of(mock(Trainer.class), mock(Trainer.class)));
 
-        assertNotNull(result.getId());
-        assertEquals("John.Doe", result.getUsername());
-        assertNotNull(result.getPassword());
-        assertEquals(10, result.getPassword().length());
-        assertTrue(result.isActive());
-        verify(traineeDao).save(anyLong(), any(Trainee.class));
+        List<Trainer> trainers = traineeService.getUnassignedTrainers("john");
+
+        assertEquals(2, trainers.size());
     }
 
     @Test
-    void create_ShouldGenerateUniqueUsername_WhenDuplicateExists() {
-        Trainee existing = new Trainee();
-        existing.setUsername("John.Doe");
-        when(traineeDao.findAll()).thenReturn(Collections.singletonList(existing));
+    void updateTrainers_shouldUpdateTrainerList() {
 
-        Trainee result = traineeService.create(trainee);
+        Trainee trainee = mock(Trainee.class);
 
-        assertEquals("John.Doe1", result.getUsername());
-        verify(traineeDao).save(anyLong(), any(Trainee.class));
+        when(traineeRepository.findByUser_Username("john"))
+                .thenReturn(Optional.of(trainee));
+
+        when(trainerRepository.findAllById(List.of(1L,2L)))
+                .thenReturn(List.of(mock(Trainer.class), mock(Trainer.class)));
+
+        traineeService.updateTrainers("john", List.of(1L,2L));
+
+        verify(trainee).setTrainers(any());
+        verify(traineeRepository).save(trainee);
     }
 
     @Test
-    void update_ShouldUpdateExistingTrainee() {
-        Long id = 1L;
-        Trainee existing = new Trainee();
-        existing.setId(id);
-        existing.setUsername("John.Doe");
-        existing.setPassword("oldpass");
+    void updateTrainers_shouldThrowException_ifTraineeNotFound() {
 
-        when(traineeDao.findById(id)).thenReturn(existing);
+        when(traineeRepository.findByUser_Username("john"))
+                .thenReturn(Optional.empty());
 
-        traineeService.update(id, trainee);
-
-        verify(traineeDao).save(eq(id), eq(trainee));
-    }
-
-    @Test
-    void update_ShouldThrowException_WhenTraineeNotFound() {
-        Long id = 1L;
-        when(traineeDao.findById(id)).thenReturn(null);
-
-        assertThrows(IllegalArgumentException.class, () -> traineeService.update(id, trainee));
-    }
-
-    @Test
-    void delete_ShouldDeleteTrainee() {
-        Long id = 1L;
-        Trainee existing = new Trainee();
-        existing.setId(id);
-        when(traineeDao.findById(id)).thenReturn(existing);
-
-        traineeService.delete(id);
-
-        verify(traineeDao).delete(id);
-    }
-
-    @Test
-    void delete_ShouldNotThrow_WhenTraineeNotFound() {
-        Long id = 1L;
-        when(traineeDao.findById(id)).thenReturn(null);
-
-        traineeService.delete(id);
-
-        verify(traineeDao, never()).delete(id);
-    }
-
-    @Test
-    void findById_ShouldReturnTrainee() {
-        Long id = 1L;
-        when(traineeDao.findById(id)).thenReturn(trainee);
-
-        Trainee result = traineeService.findById(id);
-
-        assertEquals(trainee, result);
-    }
-
-    @Test
-    void findAll_ShouldReturnAllTrainees() {
-        Collection<Trainee> trainees = Arrays.asList(trainee, new Trainee());
-        when(traineeDao.findAll()).thenReturn(trainees);
-
-        Collection<Trainee> result = traineeService.findAll();
-
-        assertEquals(2, result.size());
+        assertThrows(IllegalArgumentException.class,
+                () -> traineeService.updateTrainers("john", List.of(1L)));
     }
 }

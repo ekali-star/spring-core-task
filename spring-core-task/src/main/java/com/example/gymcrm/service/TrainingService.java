@@ -1,55 +1,74 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.TrainingDao;
 import com.example.gymcrm.model.Training;
+import com.example.gymcrm.repository.TrainingRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 @Service
+@Transactional
 public class TrainingService {
 
+    private final TrainingRepository trainingRepository;
+    private final TraineeService traineeService;
+    private final TrainerService trainerService;
     private static final Logger log = LoggerFactory.getLogger(TrainingService.class);
 
-    private TrainingDao trainingDao;
-    private final AtomicLong idGenerator = new AtomicLong(1);
-
-    @Autowired
-    public void setTrainingDao(TrainingDao trainingDao) {
-        this.trainingDao = trainingDao;
+    public TrainingService(TrainingRepository trainingRepository,
+                           TraineeService traineeService,
+                           TrainerService trainerService) {
+        this.trainingRepository = trainingRepository;
+        this.traineeService = traineeService;
+        this.trainerService = trainerService;
     }
 
-    public Training create(Training training) {
-        log.debug("Creating new training: {}", training.getTrainingName());
-
-        Long id = idGenerator.getAndIncrement();
-        training.setId(id);
-
-        trainingDao.save(id, training);
-
-        log.info("Training created successfully - ID: {}, Name: {}, Type: {}, Date: {}",
-                id, training.getTrainingName(), training.getTrainingType(), training.getTrainingDate());
-
-        return training;
-    }
-
-    public Training findById(Long id) {
-        Training training = trainingDao.findById(id);
-        if (training == null) {
-            log.debug("Training not found with ID: {}", id);
-        } else {
-            log.debug("Training found - ID: {}, Name: {}", id, training.getTrainingName());
+    public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
+        if (!traineeService.authenticate(traineeUsername, training.getTrainee().getUser().getPassword()) ||
+                !trainerService.authenticate(trainerUsername, training.getTrainer().getUser().getPassword())) {
+            throw new IllegalArgumentException("Authentication failed for trainee or trainer");
         }
-        return training;
+
+        Training saved = trainingRepository.save(training);
+        log.info("Training created - ID: {}, Name: {}", saved.getId(), saved.getTrainingName());
+        return saved;
     }
 
-    public Collection<Training> findAll() {
-        Collection<Training> trainings = trainingDao.findAll();
-        log.debug("Retrieved {} trainings from storage", trainings.size());
-        return trainings;
+    public List<Training> getTraineeTrainings(String traineeUsername,
+                                              LocalDate from,
+                                              LocalDate to,
+                                              String trainerName,
+                                              Long typeId,
+                                              String password) {
+        if (!traineeService.authenticate(traineeUsername, password)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        return trainingRepository.findTraineeTrainings(traineeUsername, from, to, trainerName, typeId);
+    }
+
+    public List<Training> getTrainerTrainings(String trainerUsername,
+                                              LocalDate from,
+                                              LocalDate to,
+                                              String traineeName,
+                                              String password) {
+        if (!trainerService.authenticate(trainerUsername, password)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        return trainingRepository.findTrainerTrainings(trainerUsername, from, to, traineeName);
+    }
+
+    public Optional<Training> findById(Long id) {
+        return trainingRepository.findById(id);
+    }
+
+    public List<Training> findAll() {
+        return trainingRepository.findAll();
     }
 }

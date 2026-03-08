@@ -62,11 +62,16 @@ public class GymFacade {
     }
 
     public Training createTraining(Training training) {
-        return trainingService.create(training);
+        return trainingService.createTraining(
+                training.getTrainee().getUser().getUsername(),
+                training.getTrainer().getUser().getUsername(),
+                training);
     }
 
     public Training getTraining(Long id) {
-        return trainingService.findById(id);
+        return trainingService.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Training not found with id: " + id));
     }
 
     public Collection<Training> getAllTrainings() {

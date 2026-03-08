@@ -1,15 +1,39 @@
 package com.example.gymcrm.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
+@Entity
+@Table(name = "training")
 public class Training {
+
+    protected Training() {
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long traineeId;
-    private Long trainerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trainee_id", nullable = false)
+    private Trainee trainee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trainer_id", nullable = false)
+    private Trainer trainer;
+
+    @Column(nullable = false)
     private String trainingName;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "training_type_id", nullable = false)
     private TrainingType trainingType;
+
+    @Column(nullable = false)
     private LocalDate trainingDate;
-    private int trainingDuration;
+
+    @Column(nullable = false)
+    private Integer trainingDuration;
 
     public Long getId() {
         return id;
@@ -19,20 +43,20 @@ public class Training {
         this.id = id;
     }
 
-    public Long getTraineeId() {
-        return traineeId;
+    public Trainee getTrainee() {
+        return trainee;
     }
 
-    public void setTraineeId(Long traineeId) {
-        this.traineeId = traineeId;
+    public void setTrainee(Trainee trainee) {
+        this.trainee = trainee;
     }
 
-    public Long getTrainerId() {
-        return trainerId;
+    public Trainer getTrainer() {
+        return trainer;
     }
 
-    public void setTrainerId(Long trainerId) {
-        this.trainerId = trainerId;
+    public void setTrainer(Trainer trainer) {
+        this.trainer = trainer;
     }
 
     public String getTrainingName() {
@@ -59,11 +83,11 @@ public class Training {
         this.trainingDate = trainingDate;
     }
 
-    public int getTrainingDuration() {
+    public Integer getTrainingDuration() {
         return trainingDuration;
     }
 
-    public void setTrainingDuration(int trainingDuration) {
+    public void setTrainingDuration(Integer trainingDuration) {
         this.trainingDuration = trainingDuration;
     }
 }

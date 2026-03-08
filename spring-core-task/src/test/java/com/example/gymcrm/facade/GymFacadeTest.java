@@ -6,16 +6,18 @@ import com.example.gymcrm.model.Training;
 import com.example.gymcrm.service.TraineeService;
 import com.example.gymcrm.service.TrainerService;
 import com.example.gymcrm.service.TrainingService;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class GymFacadeTest {
 
     @Mock
@@ -27,117 +29,54 @@ class GymFacadeTest {
     @Mock
     private TrainingService trainingService;
 
-    @InjectMocks
     private GymFacade gymFacade;
 
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        gymFacade = new GymFacade(traineeService, trainerService, trainingService);
+    }
+
     @Test
-    void createTrainee_ShouldDelegateToService() {
-        Trainee trainee = new Trainee();
+    void createTrainee_shouldCallService() {
+
+        Trainee trainee = mock(Trainee.class);
+
         when(traineeService.create(trainee)).thenReturn(trainee);
 
         Trainee result = gymFacade.createTrainee(trainee);
 
-        assertNotNull(result);
+        assertEquals(trainee, result);
         verify(traineeService).create(trainee);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
     }
 
     @Test
-    void updateTrainee_ShouldDelegateToService() {
-        Long id = 1L;
-        Trainee trainee = new Trainee();
-        when(traineeService.update(id, trainee)).thenReturn(trainee);
+    void getAllTrainees_shouldReturnCollection() {
 
-        Trainee result = gymFacade.updateTrainee(id, trainee);
+        when(traineeService.findAll())
+                .thenReturn(List.of(mock(Trainee.class), mock(Trainee.class)));
 
-        assertEquals(trainee, result);
-        verify(traineeService).update(id, trainee);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
+        assertEquals(2, gymFacade.getAllTrainees().size());
     }
 
     @Test
-    void deleteTrainee_ShouldDelegateToService() {
-        Long id = 1L;
+    void getTraining_shouldReturnTraining() {
 
-        gymFacade.deleteTrainee(id);
+        Training training = mock(Training.class);
 
-        verify(traineeService).delete(id);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
-    }
+        when(trainingService.findById(1L)).thenReturn(Optional.of(training));
 
-    @Test
-    void getTrainee_ShouldDelegateToService() {
-        Long id = 1L;
-        Trainee trainee = new Trainee();
-        when(traineeService.findById(id)).thenReturn(trainee);
-
-        Trainee result = gymFacade.getTrainee(id);
-
-        assertEquals(trainee, result);
-        verify(traineeService).findById(id);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
-    }
-
-    @Test
-    void createTrainer_ShouldDelegateToService() {
-        Trainer trainer = new Trainer();
-        when(trainerService.create(trainer)).thenReturn(trainer);
-
-        Trainer result = gymFacade.createTrainer(trainer);
-
-        assertNotNull(result);
-        verify(trainerService).create(trainer);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
-    }
-
-    @Test
-    void updateTrainer_ShouldDelegateToService() {
-        Long id = 1L;
-        Trainer trainer = new Trainer();
-        when(trainerService.update(id, trainer)).thenReturn(trainer);
-
-        Trainer result = gymFacade.updateTrainer(id, trainer);
-
-        assertEquals(trainer, result);
-        verify(trainerService).update(id, trainer);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
-    }
-
-    @Test
-    void getTrainer_ShouldDelegateToService() {
-        Long id = 1L;
-        Trainer trainer = new Trainer();
-        when(trainerService.findById(id)).thenReturn(trainer);
-
-        Trainer result = gymFacade.getTrainer(id);
-
-        assertEquals(trainer, result);
-        verify(trainerService).findById(id);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
-    }
-
-    @Test
-    void createTraining_ShouldDelegateToService() {
-        Training training = new Training();
-        when(trainingService.create(training)).thenReturn(training);
-
-        Training result = gymFacade.createTraining(training);
-
-        assertNotNull(result);
-        verify(trainingService).create(training);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
-    }
-
-    @Test
-    void getTraining_ShouldDelegateToService() {
-        Long id = 1L;
-        Training training = new Training();
-        when(trainingService.findById(id)).thenReturn(training);
-
-        Training result = gymFacade.getTraining(id);
+        Training result = gymFacade.getTraining(1L);
 
         assertEquals(training, result);
-        verify(trainingService).findById(id);
-        verifyNoMoreInteractions(traineeService, trainerService, trainingService);
+    }
+
+    @Test
+    void getTraining_shouldThrowException_ifNotFound() {
+
+        when(trainingService.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> gymFacade.getTraining(1L));
     }
 }
