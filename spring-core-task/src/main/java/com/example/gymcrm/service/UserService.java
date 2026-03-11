@@ -1,15 +1,19 @@
 package com.example.gymcrm.service;
 
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.dto.AuthCredentials;
 import com.example.gymcrm.model.User;
 import com.example.gymcrm.model.UserComparable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Optional;
 
 public abstract class UserService<T extends UserComparable> {
+
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
     protected abstract JpaRepository<T, Long> getRepository();
@@ -20,14 +24,13 @@ public abstract class UserService<T extends UserComparable> {
 
     protected abstract Optional<T> findByUsernameOptional(String username);
 
-    public T create(T entity) {
-
+    public AuthCredentials create(T entity) {
         User user = entity.getUser();
 
         String username = CredentialsGenerator.generateUsername(
                 user.getFirstName(),
                 user.getLastName(),
-                getRepository().findAll()
+                findAllUsers()
                         .stream()
                         .map(UserComparable::getUser)
                         .toList()
@@ -42,21 +45,19 @@ public abstract class UserService<T extends UserComparable> {
         T saved = getRepository().save(entity);
 
         log.info("{} created successfully - ID: {}, Username: {}",
-                getClass().getSimpleName(),
+                getClass().getSimpleName().replace("Service", ""),
                 getId(saved),
                 username);
 
-        return saved;
+        return new AuthCredentials(username, password);
     }
-
 
     public T update(Long id, T updatedUser) {
         log.debug("Updating {} with ID: {}", getClass().getSimpleName(), id);
+
         T existing = getRepository().findById(id)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                getClass().getSimpleName() + " not found with id: " + id
-                        ));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        getClass().getSimpleName() + " not found with id: " + id));
 
         updatedUser.getUser().setUsername(existing.getUser().getUsername());
         updatedUser.getUser().setPassword(existing.getUser().getPassword());
@@ -88,7 +89,6 @@ public abstract class UserService<T extends UserComparable> {
                 getClass().getSimpleName(),
                 id,
                 user.getUser().getUsername());
-
     }
 
     public T findById(Long id) {
@@ -100,16 +100,9 @@ public abstract class UserService<T extends UserComparable> {
 
         log.debug("Retrieved {} {} from database",
                 users.size(),
-                getClass().getSimpleName());
+                getClass().getSimpleName().replace("Service", ""));
 
         return users;
-    }
-
-    private Collection<User> getAllUsers() {
-        return findAllUsers()
-                .stream()
-                .map(UserComparable::getUser)
-                .toList();
     }
 
     public boolean authenticate(String username, String password) {
@@ -118,20 +111,45 @@ public abstract class UserService<T extends UserComparable> {
                 .orElse(false);
     }
 
+    public boolean authenticate(Auth auth) {
+        return authenticate(auth.getUsername(), auth.getPassword());
+    }
+
     public void changePassword(String username, String newPassword) {
         T userEntity = findByUsernameOptional(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String oldPassword = userEntity.getUser().getPassword();
+
+        if (oldPassword.equals(newPassword)) {
+            log.warn("Attempted to change to same password for user: {}", username);
+            return;
+        }
+
         userEntity.getUser().setPassword(newPassword);
         getRepository().save(userEntity);
-        log.info("{} password changed for {}", getClass().getSimpleName(), username);
+
+        log.info("Password changed for user: {} at {}", username, LocalDateTime.now());
     }
 
     public void setActiveStatus(String username, boolean active) {
         T userEntity = findByUsernameOptional(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        boolean currentStatus = userEntity.getUser().getIsActive();
+
+        if (currentStatus == active) {
+            log.warn("Attempted to set same active status ({}) for user: {}", active, username);
+            return;
+        }
+
         userEntity.getUser().setIsActive(active);
         getRepository().save(userEntity);
-        log.info("{} active status set to {} for {}", getClass().getSimpleName(), active, username);
+
+        log.info("Active status set to {} for user: {} at {}", active, username, LocalDateTime.now());
     }
 
+    public T findByUsername(String username) {
+        return findByUsernameOptional(username).orElse(null);
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.gymcrm.service;
 
+import com.example.gymcrm.dto.Auth;
 import com.example.gymcrm.model.Trainee;
 import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.repository.TraineeRepository;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -41,22 +44,113 @@ public class TraineeService extends UserService<Trainee> {
 
     @Override
     protected Optional<Trainee> findByUsernameOptional(String username) {
-        return traineeRepository.findByUser_Username(username);
+        return traineeRepository.findByUserUsername(username);
+    }
+
+    public Trainee updateTrainee(Auth auth, Trainee updatedTrainee) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        Trainee existing = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
+
+        existing.setDateOfBirth(updatedTrainee.getDateOfBirth());
+        existing.setAddress(updatedTrainee.getAddress());
+
+        existing.getUser().setFirstName(updatedTrainee.getUser().getFirstName());
+        existing.getUser().setLastName(updatedTrainee.getUser().getLastName());
+
+        Trainee saved = traineeRepository.save(existing);
+        log.info("Trainee {} updated successfully", auth.getUsername());
+        return saved;
+    }
+
+    public void deleteTrainee(Auth auth) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        Trainee trainee = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
+
+        traineeRepository.delete(trainee);
+        log.info("Trainee {} deleted successfully", auth.getUsername());
+    }
+
+    public void deleteByUsername(String username) {
+        Trainee trainee = findByUsernameOptional(username)
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
+        traineeRepository.delete(trainee);
+        log.info("Trainee {} deleted successfully", username);
     }
 
     public List<Trainer> getUnassignedTrainers(String traineeUsername) {
         return trainerRepository.findNotAssignedToTrainee(traineeUsername);
     }
 
-    public void updateTrainers(String traineeUsername, List<Long> trainerIds) {
-        Trainee trainee = traineeRepository.findByUser_Username(traineeUsername)
+    public List<Trainer> getUnassignedTrainers(Auth auth) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+        return trainerRepository.findNotAssignedToTrainee(auth.getUsername());
+    }
+
+    public void updateTrainers(String traineeUsername, List<String> trainerUsernames) {
+        Trainee trainee = traineeRepository.findByUserUsernameWithTrainers(traineeUsername)
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
 
-        List<Trainer> trainers = trainerRepository.findAllById(trainerIds);
-        trainee.setTrainers(trainers);
+        Set<String> currentTrainerUsernames = trainee.getTrainers().stream()
+                .map(trainer -> trainer.getUser().getUsername())
+                .collect(Collectors.toSet());
+
+        Set<String> newTrainerUsernames = trainerUsernames.stream()
+                .filter(username -> !currentTrainerUsernames.contains(username))
+                .collect(Collectors.toSet());
+
+        List<Trainer> newTrainers = trainerRepository.findByUserUsernameIn(newTrainerUsernames);
+
+        Set<String> foundUsernames = newTrainers.stream()
+                .map(trainer -> trainer.getUser().getUsername())
+                .collect(Collectors.toSet());
+
+        Set<String> missingUsernames = newTrainerUsernames.stream()
+                .filter(username -> !foundUsernames.contains(username))
+                .collect(Collectors.toSet());
+
+        if (!missingUsernames.isEmpty()) {
+            throw new IllegalArgumentException("Trainers not found: " + missingUsernames);
+        }
+
+        Set<String> requestedUsernamesSet = Set.copyOf(trainerUsernames);
+        trainee.getTrainers().removeIf(trainer ->
+                !requestedUsernamesSet.contains(trainer.getUser().getUsername()));
+
+        trainee.getTrainers().addAll(newTrainers);
+
         traineeRepository.save(trainee);
 
         log.info("Trainee {} trainers updated", traineeUsername);
     }
 
+    public void updateTrainers(Auth auth, List<String> trainerUsernames) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+        updateTrainers(auth.getUsername(), trainerUsernames);
+    }
+
+    public Trainee update(Auth auth, Trainee updatedTrainee) {
+        return updateTrainee(auth, updatedTrainee);
+    }
+
+    @Override
+    public Trainee update(Long id, Trainee updatedTrainee) {
+        throw new UnsupportedOperationException("Use update(Auth, Trainee) instead");
+    }
+
+    @Override
+    public void delete(Long id) {
+        throw new UnsupportedOperationException("Use deleteTrainee(Auth) or deleteByUsername(String) instead");
+    }
 }

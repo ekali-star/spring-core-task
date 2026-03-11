@@ -1,14 +1,20 @@
 package com.example.gymcrm.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "training")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Training {
-
-    protected Training() {
-    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,6 +28,7 @@ public class Training {
     @JoinColumn(name = "trainer_id", nullable = false)
     private Trainer trainer;
 
+    @NotBlank
     @Column(nullable = false)
     private String trainingName;
 
@@ -29,65 +36,12 @@ public class Training {
     @JoinColumn(name = "training_type_id", nullable = false)
     private TrainingType trainingType;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDate trainingDate;
 
+    @NotNull
+    @Min(1)
     @Column(nullable = false)
     private Integer trainingDuration;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Trainee getTrainee() {
-        return trainee;
-    }
-
-    public void setTrainee(Trainee trainee) {
-        this.trainee = trainee;
-    }
-
-    public Trainer getTrainer() {
-        return trainer;
-    }
-
-    public void setTrainer(Trainer trainer) {
-        this.trainer = trainer;
-    }
-
-    public String getTrainingName() {
-        return trainingName;
-    }
-
-    public void setTrainingName(String trainingName) {
-        this.trainingName = trainingName;
-    }
-
-    public TrainingType getTrainingType() {
-        return trainingType;
-    }
-
-    public void setTrainingType(TrainingType trainingType) {
-        this.trainingType = trainingType;
-    }
-
-    public LocalDate getTrainingDate() {
-        return trainingDate;
-    }
-
-    public void setTrainingDate(LocalDate trainingDate) {
-        this.trainingDate = trainingDate;
-    }
-
-    public Integer getTrainingDuration() {
-        return trainingDuration;
-    }
-
-    public void setTrainingDuration(Integer trainingDuration) {
-        this.trainingDuration = trainingDuration;
-    }
 }

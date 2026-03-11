@@ -1,5 +1,6 @@
 package com.example.gymcrm.service;
 
+import com.example.gymcrm.dto.Auth;
 import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.repository.TrainerRepository;
 import jakarta.transaction.Transactional;
@@ -36,6 +37,33 @@ public class TrainerService extends UserService<Trainer> {
 
     @Override
     protected Optional<Trainer> findByUsernameOptional(String username) {
-        return trainerRepository.findByUser_Username(username);
+        return trainerRepository.findByUserUsername(username);
+    }
+
+    public Trainer updateTrainer(Auth auth, Trainer updatedTrainer) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        Trainer existing = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainer not found"));
+
+        existing.setSpecialization(updatedTrainer.getSpecialization());
+
+        existing.getUser().setFirstName(updatedTrainer.getUser().getFirstName());
+        existing.getUser().setLastName(updatedTrainer.getUser().getLastName());
+
+        Trainer saved = trainerRepository.save(existing);
+        log.info("Trainer {} updated successfully", auth.getUsername());
+        return saved;
+    }
+
+    public Trainer update(Auth auth, Trainer updatedTrainer) {
+        return updateTrainer(auth, updatedTrainer);
+    }
+
+    @Override
+    public Trainer update(Long id, Trainer updatedTrainer) {
+        throw new UnsupportedOperationException("Use update(Auth, Trainer) instead");
     }
 }

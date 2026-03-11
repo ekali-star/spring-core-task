@@ -1,5 +1,8 @@
 package com.example.gymcrm.service;
 
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.model.Trainee;
+import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.model.Training;
 import com.example.gymcrm.repository.TrainingRepository;
 import jakarta.transaction.Transactional;
@@ -29,39 +32,53 @@ public class TrainingService {
     }
 
     public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
-        if (!traineeService.authenticate(traineeUsername, training.getTrainee().getUser().getPassword()) ||
-                !trainerService.authenticate(trainerUsername, training.getTrainer().getUser().getPassword())) {
-            throw new IllegalArgumentException("Authentication failed for trainee or trainer");
+        Trainee trainee = traineeService.findByUsername(traineeUsername);
+        if (trainee == null) {
+            throw new IllegalArgumentException("Trainee not found: " + traineeUsername);
         }
+
+        Trainer trainer = trainerService.findByUsername(trainerUsername);
+        if (trainer == null) {
+            throw new IllegalArgumentException("Trainer not found: " + trainerUsername);
+        }
+
+        if (!trainee.getUser().getIsActive() || !trainer.getUser().getIsActive()) {
+            throw new IllegalArgumentException("Trainee or Trainer is not active");
+        }
+
+        training.setTrainee(trainee);
+        training.setTrainer(trainer);
 
         Training saved = trainingRepository.save(training);
         log.info("Training created - ID: {}, Name: {}", saved.getId(), saved.getTrainingName());
         return saved;
     }
 
-    public List<Training> getTraineeTrainings(String traineeUsername,
-                                              LocalDate from,
-                                              LocalDate to,
+    public List<Training> getTraineeTrainings(Auth auth,
+                                              LocalDate fromDate,
+                                              LocalDate toDate,
                                               String trainerName,
-                                              Long typeId,
-                                              String password) {
-        if (!traineeService.authenticate(traineeUsername, password)) {
+                                              Long trainingTypeId) {
+        if (!traineeService.authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
 
-        return trainingRepository.findTraineeTrainings(traineeUsername, from, to, trainerName, typeId);
+        return trainingRepository.findTraineeTrainings(
+                auth.getUsername(), fromDate, toDate, trainerName, trainingTypeId
+        );
     }
 
-    public List<Training> getTrainerTrainings(String trainerUsername,
-                                              LocalDate from,
-                                              LocalDate to,
-                                              String traineeName,
-                                              String password) {
-        if (!trainerService.authenticate(trainerUsername, password)) {
+    public List<Training> getTrainerTrainings(Auth auth,
+                                              LocalDate fromDate,
+                                              LocalDate toDate,
+                                              String traineeName) {
+        if (!trainerService.authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
 
-        return trainingRepository.findTrainerTrainings(trainerUsername, from, to, traineeName);
+        return trainingRepository.findTrainerTrainings(
+                auth.getUsername(), fromDate, toDate, traineeName
+        );
     }
 
     public Optional<Training> findById(Long id) {
