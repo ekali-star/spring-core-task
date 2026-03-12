@@ -1,87 +1,68 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.TrainingDao;
-import com.example.gymcrm.model.Training;
-import com.example.gymcrm.model.TrainingType;
+import com.example.gymcrm.model.*;
+import com.example.gymcrm.repository.TrainingRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class TrainingServiceTest {
 
     @Mock
-    private TrainingDao trainingDao;
+    private TrainingRepository trainingRepository;
+    @Mock
+    private TraineeService traineeService;
+    @Mock
+    private TrainerService trainerService;
 
-    @InjectMocks
     private TrainingService trainingService;
-
-    private Training training;
 
     @BeforeEach
     void setUp() {
-        training = new Training();
-        training.setId(1L);
-        training.setTraineeId(1L);
-        training.setTrainerId(1L);
-        training.setTrainingName("Morning Yoga");
-        training.setTrainingType(TrainingType.YOGA);
-        training.setTrainingDate(LocalDate.now());
-        training.setTrainingDuration(60);
+        MockitoAnnotations.openMocks(this);
+        trainingService = new TrainingService(trainingRepository, traineeService, trainerService);
+    }
+
+    private Training prepareTrainingMock() {
+        Trainee trainee = new Trainee();
+        Trainer trainer = new Trainer();
+        User traineeUser = new User(null, "John", "Doe", "john", "pass", true);
+        User trainerUser = new User(null, "Mike", "Smith", "mike", "pass", true);
+        trainee.setUser(traineeUser);
+        trainer.setUser(trainerUser);
+        TrainingType type = new TrainingType(1L, "Cardio");
+
+        return new Training(1L, trainee, trainer, "Morning Cardio", type, LocalDate.now(), 60);
     }
 
     @Test
-    void create_ShouldSaveTraining() {
-        Training result = trainingService.create(training);
+    void createTraining_shouldSaveTraining() {
+        Training training = prepareTrainingMock();
 
-        assertNotNull(result);
-        assertNotNull(result.getId());
-        assertEquals(TrainingType.YOGA, result.getTrainingType());
-        verify(trainingDao).save(anyLong(), any(Training.class));
-    }
+        when(traineeService.findByUsername("trainee")).thenReturn(training.getTrainee());
+        when(trainerService.findByUsername("trainer")).thenReturn(training.getTrainer());
+        when(trainingRepository.save(training)).thenReturn(training);
 
-    @Test
-    void findById_ShouldReturnTraining() {
-        Long id = 1L;
-        when(trainingDao.findById(id)).thenReturn(training);
-
-        Training result = trainingService.findById(id);
+        Training result = trainingService.createTraining("trainee", "trainer", training);
 
         assertEquals(training, result);
-        assertEquals(TrainingType.YOGA, result.getTrainingType());
+        verify(trainingRepository).save(training);
     }
 
     @Test
-    void findById_ShouldReturnNull_WhenNotFound() {
-        Long id = 999L;
-        when(trainingDao.findById(id)).thenReturn(null);
+    void findById_shouldReturnTraining() {
+        Training training = prepareTrainingMock();
+        when(trainingRepository.findById(1L)).thenReturn(Optional.of(training));
 
-        Training result = trainingService.findById(id);
-
-        assertNull(result);
+        Optional<Training> result = trainingService.findById(1L);
+        assertTrue(result.isPresent());
+        assertEquals(training, result.get());
     }
-
-    @Test
-    void findAll_ShouldReturnAllTrainings() {
-        Collection<Training> trainings = Arrays.asList(training, new Training());
-        when(trainingDao.findAll()).thenReturn(trainings);
-
-        Collection<Training> result = trainingService.findAll();
-
-        assertEquals(2, result.size());
-    }
-
 }

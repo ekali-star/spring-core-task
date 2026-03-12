@@ -1,108 +1,54 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.TrainerDao;
 import com.example.gymcrm.model.Trainer;
+import com.example.gymcrm.model.User;
+import com.example.gymcrm.model.TrainingType;
+import com.example.gymcrm.repository.TrainerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class TrainerServiceTest {
 
     @Mock
-    private TrainerDao trainerDao;
+    private TrainerRepository trainerRepository;
 
-    @InjectMocks
     private TrainerService trainerService;
-
-    private Trainer trainer;
 
     @BeforeEach
     void setUp() {
-        trainer = new Trainer();
-        trainer.setFirstName("Jane");
-        trainer.setLastName("Smith");
-        trainer.setSpecialization("Yoga");
+        MockitoAnnotations.openMocks(this);
+        trainerService = new TrainerService(trainerRepository);
     }
 
     @Test
-    void create_ShouldGenerateUsernameAndPassword() {
-        when(trainerDao.findAll()).thenReturn(Collections.emptyList());
-
-        Trainer result = trainerService.create(trainer);
-
-        assertNotNull(result.getId());
-        assertEquals("Jane.Smith", result.getUsername());
-        assertNotNull(result.getPassword());
-        assertEquals(10, result.getPassword().length());
-        assertEquals("Yoga", result.getSpecialization());
-        assertTrue(result.isActive());
-        verify(trainerDao).save(anyLong(), any(Trainer.class));
+    void findAll_shouldReturnAllTrainers() {
+        when(trainerRepository.findAll()).thenReturn(List.of(mock(Trainer.class), mock(Trainer.class)));
+        assertEquals(2, trainerService.findAll().size());
     }
 
     @Test
-    void create_ShouldGenerateUniqueUsername_WhenDuplicateExists() {
-        Trainer existing = new Trainer();
-        existing.setUsername("Jane.Smith");
-        when(trainerDao.findAll()).thenReturn(Collections.singletonList(existing));
-
-        Trainer result = trainerService.create(trainer);
-
-        assertEquals("Jane.Smith1", result.getUsername());
-        verify(trainerDao).save(anyLong(), any(Trainer.class));
+    void findById_shouldReturnTrainer() {
+        Trainer trainer = mock(Trainer.class);
+        when(trainerRepository.findById(1L)).thenReturn(Optional.of(trainer));
+        assertEquals(trainer, trainerService.findById(1L));
     }
 
     @Test
-    void update_ShouldUpdateExistingTrainer() {
-        Long id = 1L;
-        Trainer existing = new Trainer();
-        existing.setId(id);
-        existing.setUsername("Jane.Smith");
-        existing.setPassword("oldpass");
+    void authenticate_shouldReturnTrue_whenPasswordMatches() {
+        Trainer trainer = mock(Trainer.class);
+        User user = new User(null, "John", "Doe", "john", "pass", true);
+        when(trainer.getUser()).thenReturn(user);
+        when(trainerRepository.findByUser_Username("john")).thenReturn(Optional.of(trainer));
 
-        when(trainerDao.findById(id)).thenReturn(existing);
-
-        trainerService.update(id, trainer);
-
-        verify(trainerDao).save(eq(id), eq(trainer));
-    }
-
-    @Test
-    void update_ShouldThrowException_WhenTrainerNotFound() {
-        Long id = 1L;
-        when(trainerDao.findById(id)).thenReturn(null);
-
-        assertThrows(IllegalArgumentException.class, () -> trainerService.update(id, trainer));
-    }
-
-    @Test
-    void findById_ShouldReturnTrainer() {
-        Long id = 1L;
-        when(trainerDao.findById(id)).thenReturn(trainer);
-
-        Trainer result = trainerService.findById(id);
-
-        assertEquals(trainer, result);
-    }
-
-    @Test
-    void findAll_ShouldReturnAllTrainers() {
-        Collection<Trainer> trainers = Arrays.asList(trainer, new Trainer());
-        when(trainerDao.findAll()).thenReturn(trainers);
-
-        Collection<Trainer> result = trainerService.findAll();
-
-        assertEquals(2, result.size());
+        assertTrue(trainerService.authenticate("john", "pass"));
+        assertFalse(trainerService.authenticate("john", "wrong"));
     }
 }

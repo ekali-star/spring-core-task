@@ -1,31 +1,20 @@
 package com.example.gymcrm.model;
 
-import java.util.Arrays;
+import jakarta.persistence.*;
+import lombok.*;
 
-public enum TrainingType {
-    CARDIO("Cardio"),
-    STRENGTH("Strength"),
-    FLEXIBILITY("Flexibility"),
-    BALANCE("Balance"),
-    HIIT("HIIT"),
-    YOGA("Yoga"),
-    PILATES("Pilates"),
-    CROSSFIT("Crossfit");
+@Entity
+@Table(name = "training_type")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+public class TrainingType {
 
-    private final String displayName;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    TrainingType(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public static TrainingType fromString(String text) {
-        return Arrays.stream(TrainingType.values()).filter(type -> type.displayName.equalsIgnoreCase(text) ||
-                type.name().equalsIgnoreCase(text))
-                .findFirst()
-                .orElse(null);
-    }
+    @Column(name = "training_type_name", nullable = false)
+    private String trainingTypeName;
 }

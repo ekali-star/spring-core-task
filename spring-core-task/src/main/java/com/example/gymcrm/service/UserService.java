@@ -1,77 +1,99 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.UserDao;
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.dto.AuthCredentials;
 import com.example.gymcrm.model.User;
+import com.example.gymcrm.model.UserComparable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
+import java.util.Optional;
 
-public abstract class UserService<T extends User> {
+public abstract class UserService<T extends UserComparable> {
+
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    protected abstract UserDao<T> getDao();
+    protected abstract JpaRepository<T, Long> getRepository();
 
-    public T create(T user) {
-        String username = CredentialsGenerator.generateUsername(
-                user.getFirstName(),
-                user.getLastName(),
-                getDao().findAll()
-        );
-        String password = CredentialsGenerator.generatePassword();
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setActive(true);
-        T saved = saveWithId(user);
-        log.info("{} created successfully - ID: {}, Username: {}",
-                getClass().getSimpleName(),
-                getId(saved),
-                username);
-        return saved;
-    }
-
-    protected abstract T saveWithId(T user);
+    protected abstract Collection<T> findAllUsers();
 
     protected abstract Long getId(T user);
 
-    public T update(Long id, T user) {
-        log.debug("Updating {} with ID: {}", getClass().getSimpleName(), id);
-        T existing = getDao().findById(id);
-        if (existing == null) {
-            log.error("Update failed - {} not found with ID: {}", getClass().getSimpleName(), id);
-            throw new IllegalArgumentException(getClass().getSimpleName() + " not found with id: " + id);
-        }
-        user.setUsername(existing.getUsername());
-        user.setPassword(existing.getPassword());
-        getDao().save(id, user);
-        log.info("{} updated successfully - ID: {}, Username: {}", getClass().getSimpleName(), id, user.getUsername());
-        return user;
-    }
+    protected abstract Optional<T> findByUsernameOptional(String username);
 
-    public void delete(Long id) {
-        log.debug("Deleting {} with ID: {}", getClass().getSimpleName(), id);
-        T user = getDao().findById(id);
-        if (user == null) {
-            log.warn("Delete attempted for non-existent {} - ID: {}", getClass().getSimpleName(), id);
-            return;
-        }
-        getDao().delete(id);
-        log.info("{} deleted successfully - ID: {}, Username: {}", getClass().getSimpleName(), id, user.getUsername());
+    public AuthCredentials create(T entity) {
+        User user = entity.getUser();
+
+        String username = CredentialsGenerator.generateUsername(
+                user.getFirstName(),
+                user.getLastName(),
+                findAllUsers()
+                        .stream()
+                        .map(UserComparable::getUser)
+                        .toList()
+        );
+
+        String password = CredentialsGenerator.generatePassword();
+
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setIsActive(true);
+
+        T saved = getRepository().save(entity);
+
+        log.info("{} created successfully - ID: {}, Username: {}",
+                getClass().getSimpleName().replace("Service", ""),
+                getId(saved),
+                username);
+
+        return new AuthCredentials(username, password);
     }
 
     public T findById(Long id) {
-        T user = getDao().findById(id);
-        if (user == null) {
-            log.debug("{} not found with ID: {}", getClass().getSimpleName(), id);
-        } else {
-            log.debug("{} found - ID: {}, Username: {}", getClass().getSimpleName(), id, user.getUsername());
-        }
-        return user;
+        return getRepository().findById(id).orElse(null);
     }
 
     public Collection<T> findAll() {
-        Collection<T> users = getDao().findAll();
-        log.debug("Retrieved {} {} from storage", users.size(), getClass().getSimpleName());
-        return users;
+        return getRepository().findAll();
+    }
+
+    public boolean authenticate(String username, String password) {
+        return findByUsernameOptional(username)
+                .map(t -> t.getUser().getPassword().equals(password))
+                .orElse(false);
+    }
+
+    public boolean authenticate(Auth auth) {
+        return authenticate(auth.getUsername(), auth.getPassword());
+    }
+
+    public void changePassword(Auth auth, String newPassword) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        T userEntity = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        userEntity.getUser().setPassword(newPassword);
+        getRepository().save(userEntity);
+    }
+
+    public void setActiveStatus(Auth auth, boolean active) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        T userEntity = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        userEntity.getUser().setIsActive(active);
+        getRepository().save(userEntity);
+    }
+
+    public T findByUsername(String username) {
+        return findByUsernameOptional(username).orElse(null);
     }
 }
