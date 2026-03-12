@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -52,57 +51,12 @@ public abstract class UserService<T extends UserComparable> {
         return new AuthCredentials(username, password);
     }
 
-    public T update(Long id, T updatedUser) {
-        log.debug("Updating {} with ID: {}", getClass().getSimpleName(), id);
-
-        T existing = getRepository().findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        getClass().getSimpleName() + " not found with id: " + id));
-
-        updatedUser.getUser().setUsername(existing.getUser().getUsername());
-        updatedUser.getUser().setPassword(existing.getUser().getPassword());
-
-        updatedUser = getRepository().save(updatedUser);
-
-        log.info("{} updated successfully - ID: {}, Username: {}",
-                getClass().getSimpleName(),
-                id,
-                updatedUser.getUser().getUsername());
-
-        return updatedUser;
-    }
-
-    public void delete(Long id) {
-        log.debug("Deleting {} with ID: {}", getClass().getSimpleName(), id);
-
-        T user = getRepository().findById(id).orElse(null);
-
-        if (user == null) {
-            log.warn("Delete attempted for non-existent {} - ID: {}",
-                    getClass().getSimpleName(), id);
-            return;
-        }
-
-        getRepository().deleteById(id);
-
-        log.info("{} deleted successfully - ID: {}, Username: {}",
-                getClass().getSimpleName(),
-                id,
-                user.getUser().getUsername());
-    }
-
     public T findById(Long id) {
         return getRepository().findById(id).orElse(null);
     }
 
     public Collection<T> findAll() {
-        Collection<T> users = getRepository().findAll();
-
-        log.debug("Retrieved {} {} from database",
-                users.size(),
-                getClass().getSimpleName().replace("Service", ""));
-
-        return users;
+        return getRepository().findAll();
     }
 
     public boolean authenticate(String username, String password) {
@@ -115,38 +69,28 @@ public abstract class UserService<T extends UserComparable> {
         return authenticate(auth.getUsername(), auth.getPassword());
     }
 
-    public void changePassword(String username, String newPassword) {
-        T userEntity = findByUsernameOptional(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        String oldPassword = userEntity.getUser().getPassword();
-
-        if (oldPassword.equals(newPassword)) {
-            log.warn("Attempted to change to same password for user: {}", username);
-            return;
+    public void changePassword(Auth auth, String newPassword) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
         }
+
+        T userEntity = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         userEntity.getUser().setPassword(newPassword);
         getRepository().save(userEntity);
-
-        log.info("Password changed for user: {} at {}", username, LocalDateTime.now());
     }
 
-    public void setActiveStatus(String username, boolean active) {
-        T userEntity = findByUsernameOptional(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        boolean currentStatus = userEntity.getUser().getIsActive();
-
-        if (currentStatus == active) {
-            log.warn("Attempted to set same active status ({}) for user: {}", active, username);
-            return;
+    public void setActiveStatus(Auth auth, boolean active) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
         }
+
+        T userEntity = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         userEntity.getUser().setIsActive(active);
         getRepository().save(userEntity);
-
-        log.info("Active status set to {} for user: {} at {}", active, username, LocalDateTime.now());
     }
 
     public T findByUsername(String username) {

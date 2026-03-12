@@ -35,8 +35,8 @@ public class Trainee implements UserComparable {
             joinColumns = @JoinColumn(name = "trainee_id"),
             inverseJoinColumns = @JoinColumn(name = "trainer_id")
     )
-    private List<Trainer> trainers = new ArrayList<>();
+    private List<Trainer> trainers;
 
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Training> trainings = new ArrayList<>();
+    private List<Training> trainings;
 }

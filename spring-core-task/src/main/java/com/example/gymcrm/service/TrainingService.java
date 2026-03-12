@@ -6,8 +6,6 @@ import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.model.Training;
 import com.example.gymcrm.repository.TrainingRepository;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,7 +19,6 @@ public class TrainingService {
     private final TrainingRepository trainingRepository;
     private final TraineeService traineeService;
     private final TrainerService trainerService;
-    private static final Logger log = LoggerFactory.getLogger(TrainingService.class);
 
     public TrainingService(TrainingRepository trainingRepository,
                            TraineeService traineeService,
@@ -49,9 +46,7 @@ public class TrainingService {
         training.setTrainee(trainee);
         training.setTrainer(trainer);
 
-        Training saved = trainingRepository.save(training);
-        log.info("Training created - ID: {}, Name: {}", saved.getId(), saved.getTrainingName());
-        return saved;
+        return trainingRepository.save(training);
     }
 
     public List<Training> getTraineeTrainings(Auth auth,

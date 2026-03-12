@@ -44,7 +44,7 @@ public class TraineeService extends UserService<Trainee> {
 
     @Override
     protected Optional<Trainee> findByUsernameOptional(String username) {
-        return traineeRepository.findByUserUsername(username);
+        return traineeRepository.findByUser_Username(username);
     }
 
     public Trainee updateTrainee(Auth auth, Trainee updatedTrainee) {
@@ -61,9 +61,7 @@ public class TraineeService extends UserService<Trainee> {
         existing.getUser().setFirstName(updatedTrainee.getUser().getFirstName());
         existing.getUser().setLastName(updatedTrainee.getUser().getLastName());
 
-        Trainee saved = traineeRepository.save(existing);
-        log.info("Trainee {} updated successfully", auth.getUsername());
-        return saved;
+        return traineeRepository.save(existing);
     }
 
     public void deleteTrainee(Auth auth) {
@@ -75,18 +73,6 @@ public class TraineeService extends UserService<Trainee> {
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
 
         traineeRepository.delete(trainee);
-        log.info("Trainee {} deleted successfully", auth.getUsername());
-    }
-
-    public void deleteByUsername(String username) {
-        Trainee trainee = findByUsernameOptional(username)
-                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
-        traineeRepository.delete(trainee);
-        log.info("Trainee {} deleted successfully", username);
-    }
-
-    public List<Trainer> getUnassignedTrainers(String traineeUsername) {
-        return trainerRepository.findNotAssignedToTrainee(traineeUsername);
     }
 
     public List<Trainer> getUnassignedTrainers(Auth auth) {
@@ -96,8 +82,12 @@ public class TraineeService extends UserService<Trainee> {
         return trainerRepository.findNotAssignedToTrainee(auth.getUsername());
     }
 
-    public void updateTrainers(String traineeUsername, List<String> trainerUsernames) {
-        Trainee trainee = traineeRepository.findByUserUsernameWithTrainers(traineeUsername)
+    public void updateTrainers(Auth auth, List<String> trainerUsernames) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        Trainee trainee = traineeRepository.findWithTrainersByUser_Username(auth.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
 
         Set<String> currentTrainerUsernames = trainee.getTrainers().stream()
@@ -108,7 +98,7 @@ public class TraineeService extends UserService<Trainee> {
                 .filter(username -> !currentTrainerUsernames.contains(username))
                 .collect(Collectors.toSet());
 
-        List<Trainer> newTrainers = trainerRepository.findByUserUsernameIn(newTrainerUsernames);
+        List<Trainer> newTrainers = trainerRepository.findByUser_UsernameIn(newTrainerUsernames);
 
         Set<String> foundUsernames = newTrainers.stream()
                 .map(trainer -> trainer.getUser().getUsername())
@@ -123,34 +113,12 @@ public class TraineeService extends UserService<Trainee> {
         }
 
         Set<String> requestedUsernamesSet = Set.copyOf(trainerUsernames);
+
         trainee.getTrainers().removeIf(trainer ->
                 !requestedUsernamesSet.contains(trainer.getUser().getUsername()));
 
         trainee.getTrainers().addAll(newTrainers);
 
         traineeRepository.save(trainee);
-
-        log.info("Trainee {} trainers updated", traineeUsername);
-    }
-
-    public void updateTrainers(Auth auth, List<String> trainerUsernames) {
-        if (!authenticate(auth)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        updateTrainers(auth.getUsername(), trainerUsernames);
-    }
-
-    public Trainee update(Auth auth, Trainee updatedTrainee) {
-        return updateTrainee(auth, updatedTrainee);
-    }
-
-    @Override
-    public Trainee update(Long id, Trainee updatedTrainee) {
-        throw new UnsupportedOperationException("Use update(Auth, Trainee) instead");
-    }
-
-    @Override
-    public void delete(Long id) {
-        throw new UnsupportedOperationException("Use deleteTrainee(Auth) or deleteByUsername(String) instead");
     }
 }

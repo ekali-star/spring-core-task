@@ -11,15 +11,15 @@ import java.util.List;
 public interface TrainingRepository extends JpaRepository<Training, Long> {
 
     @Query("""
-        select t from Training t
-        where t.trainee.user.username = :username
-          and (:from is null or t.trainingDate >= :from)
-          and (:to is null or t.trainingDate <= :to)
-          and (:trainerName is null or
-               lower(concat(t.trainer.user.firstName,' ',t.trainer.user.lastName))
-               like lower(concat('%', :trainerName, '%')))
-          and (:typeId is null or t.trainingType.id = :typeId)
-    """)
+                select t from Training t
+                where t.trainee.user.username = :username
+                  and (:from is null or t.trainingDate >= :from)
+                  and (:to is null or t.trainingDate <= :to)
+                  and (:trainerName is null or
+                       lower(concat(t.trainer.user.firstName,' ',t.trainer.user.lastName))
+                       like lower(concat('%', :trainerName, '%')))
+                  and (:typeId is null or t.trainingType.id = :typeId)
+            """)
     List<Training> findTraineeTrainings(
             @Param("username") String username,
             @Param("from") LocalDate from,

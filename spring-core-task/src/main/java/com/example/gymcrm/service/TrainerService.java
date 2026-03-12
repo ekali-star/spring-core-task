@@ -37,7 +37,7 @@ public class TrainerService extends UserService<Trainer> {
 
     @Override
     protected Optional<Trainer> findByUsernameOptional(String username) {
-        return trainerRepository.findByUserUsername(username);
+        return trainerRepository.findByUser_Username(username);
     }
 
     public Trainer updateTrainer(Auth auth, Trainer updatedTrainer) {
@@ -49,21 +49,9 @@ public class TrainerService extends UserService<Trainer> {
                 .orElseThrow(() -> new IllegalArgumentException("Trainer not found"));
 
         existing.setSpecialization(updatedTrainer.getSpecialization());
-
         existing.getUser().setFirstName(updatedTrainer.getUser().getFirstName());
         existing.getUser().setLastName(updatedTrainer.getUser().getLastName());
 
-        Trainer saved = trainerRepository.save(existing);
-        log.info("Trainer {} updated successfully", auth.getUsername());
-        return saved;
-    }
-
-    public Trainer update(Auth auth, Trainer updatedTrainer) {
-        return updateTrainer(auth, updatedTrainer);
-    }
-
-    @Override
-    public Trainer update(Long id, Trainer updatedTrainer) {
-        throw new UnsupportedOperationException("Use update(Auth, Trainer) instead");
+        return trainerRepository.save(existing);
     }
 }

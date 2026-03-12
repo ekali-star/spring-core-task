@@ -1,0 +1,11 @@
+com\example\gymcrm\service\TrainingServiceTest.class
+com\example\gymcrm\service\CredentialsGeneratorTest.class
+com\example\gymcrm\storage\TraineeStorageTest.class
+com\example\gymcrm\storage\TrainingStorageTest.class
+com\example\gymcrm\facade\GymFacadeTest.class
+com\example\gymcrm\service\TrainerServiceTest.class
+com\example\gymcrm\dao\TrainerDaoTest.class
+com\example\gymcrm\storage\TrainerStorageTest.class
+com\example\gymcrm\dao\TraineeDaoTest.class
+com\example\gymcrm\dao\TrainingDaoTest.class
+com\example\gymcrm\service\TraineeServiceTest.class

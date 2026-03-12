@@ -27,8 +27,8 @@ public class Trainer implements UserComparable {
     private User user;
 
     @ManyToMany(mappedBy = "trainers")
-    private List<Trainee> trainees = new ArrayList<>();
+    private List<Trainee> trainees;
 
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Training> trainings = new ArrayList<>();
+    private List<Training> trainings;
 }

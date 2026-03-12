@@ -19,10 +19,9 @@ public class GymFacade {
     private final TrainerService trainerService;
     private final TrainingService trainingService;
 
-    public GymFacade(
-            TraineeService traineeService,
-            TrainerService trainerService,
-            TrainingService trainingService) {
+    public GymFacade(TraineeService traineeService,
+                     TrainerService trainerService,
+                     TrainingService trainingService) {
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
@@ -64,12 +63,6 @@ public class GymFacade {
         return trainerService.findAll();
     }
 
-    public Training getTraining(Long id) {
-        return trainingService.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Training not found with id: " + id));
-    }
-
     public Collection<Training> getAllTrainings() {
         return trainingService.findAll();
     }
@@ -89,10 +82,8 @@ public class GymFacade {
     }
 
     public List<Trainer> getUnassignedTrainers(String username, String password) {
-        if (!traineeService.authenticate(username, password)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        return traineeService.getUnassignedTrainers(username);
+        Auth auth = new Auth(username, password);
+        return traineeService.getUnassignedTrainers(auth);
     }
 
     public Trainee updateTrainee(String username, String password, Trainee trainee) {
@@ -115,46 +106,34 @@ public class GymFacade {
         traineeService.deleteTrainee(auth);
     }
 
-    public void changeTraineePassword(String username, String oldPassword, String newPassword) {
-        if (!traineeService.authenticate(username, oldPassword)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        traineeService.changePassword(username, newPassword);
+    public void changeTraineePassword(String username, String password, String newPassword) {
+        Auth auth = new Auth(username, password);
+        traineeService.changePassword(auth, newPassword);
     }
 
-    public void changeTrainerPassword(String username, String oldPassword, String newPassword) {
-        if (!trainerService.authenticate(username, oldPassword)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        trainerService.changePassword(username, newPassword);
+    public void changeTrainerPassword(String username, String password, String newPassword) {
+        Auth auth = new Auth(username, password);
+        trainerService.changePassword(auth, newPassword);
     }
 
     public void activateTrainee(String username, String password) {
-        if (!traineeService.authenticate(username, password)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        traineeService.setActiveStatus(username, true);
+        Auth auth = new Auth(username, password);
+        traineeService.setActiveStatus(auth, true);
     }
 
     public void deactivateTrainee(String username, String password) {
-        if (!traineeService.authenticate(username, password)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        traineeService.setActiveStatus(username, false);
+        Auth auth = new Auth(username, password);
+        traineeService.setActiveStatus(auth, false);
     }
 
     public void activateTrainer(String username, String password) {
-        if (!trainerService.authenticate(username, password)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        trainerService.setActiveStatus(username, true);
+        Auth auth = new Auth(username, password);
+        trainerService.setActiveStatus(auth, true);
     }
 
     public void deactivateTrainer(String username, String password) {
-        if (!trainerService.authenticate(username, password)) {
-            throw new IllegalArgumentException("Authentication failed");
-        }
-        trainerService.setActiveStatus(username, false);
+        Auth auth = new Auth(username, password);
+        trainerService.setActiveStatus(auth, false);
     }
 
     public boolean authenticateTrainee(String username, String password) {
@@ -163,26 +142,5 @@ public class GymFacade {
 
     public boolean authenticateTrainer(String username, String password) {
         return trainerService.authenticate(username, password);
-    }
-
-    @Deprecated
-    public Trainee updateTrainee(Long id, Trainee trainee) {
-        throw new UnsupportedOperationException(
-                "Use updateTrainee(String username, String password, Trainee trainee) instead"
-        );
-    }
-
-    @Deprecated
-    public void deleteTrainee(Long id) {
-        throw new UnsupportedOperationException(
-                "Use deleteTrainee(String username, String password) instead"
-        );
-    }
-
-    @Deprecated
-    public Trainer updateTrainer(Long id, Trainer trainer) {
-        throw new UnsupportedOperationException(
-                "Use updateTrainer(String username, String password, Trainer trainer) instead"
-        );
     }
 }
