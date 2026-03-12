@@ -11,16 +11,13 @@ class CredentialsGeneratorTest {
 
     @Test
     void generatePassword_shouldReturnLength10() {
-
         String password = CredentialsGenerator.generatePassword();
-
         assertEquals(10, password.length());
     }
 
     @Test
     void generateUsername_shouldAddNumberIfExists() {
-
-        User existing = new User("John","Doe","John.Doe","pass",true);
+        User existing = new User(null, "John", "Doe", "John.Doe", "pass", true);
 
         String username = CredentialsGenerator.generateUsername(
                 "John",

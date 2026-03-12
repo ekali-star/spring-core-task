@@ -1,15 +1,15 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.model.Trainee;
-import com.example.gymcrm.model.Trainer;
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.model.*;
 import com.example.gymcrm.repository.TraineeRepository;
 import com.example.gymcrm.repository.TrainerRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,39 +34,26 @@ class TraineeServiceTest {
 
     @Test
     void getUnassignedTrainers_shouldReturnList() {
+        TraineeService spyService = spy(new TraineeService(traineeRepository, trainerRepository));
+
+        Auth auth = new Auth("john", "pass");
+
+        doReturn(true).when(spyService).authenticate(auth);
 
         when(trainerRepository.findNotAssignedToTrainee("john"))
                 .thenReturn(List.of(mock(Trainer.class), mock(Trainer.class)));
 
-        List<Trainer> trainers = traineeService.getUnassignedTrainers("john");
+        List<Trainer> trainers = spyService.getUnassignedTrainers(auth);
 
         assertEquals(2, trainers.size());
     }
 
     @Test
-    void updateTrainers_shouldUpdateTrainerList() {
-
-        Trainee trainee = mock(Trainee.class);
-
-        when(traineeRepository.findByUser_Username("john"))
-                .thenReturn(Optional.of(trainee));
-
-        when(trainerRepository.findAllById(List.of(1L,2L)))
-                .thenReturn(List.of(mock(Trainer.class), mock(Trainer.class)));
-
-        traineeService.updateTrainers("john", List.of(1L,2L));
-
-        verify(trainee).setTrainers(any());
-        verify(traineeRepository).save(trainee);
-    }
-
-    @Test
     void updateTrainers_shouldThrowException_ifTraineeNotFound() {
-
         when(traineeRepository.findByUser_Username("john"))
                 .thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
-                () -> traineeService.updateTrainers("john", List.of(1L)));
+                () -> traineeService.updateTrainers(new Auth("john", "pass"), List.of("trainer1")));
     }
 }

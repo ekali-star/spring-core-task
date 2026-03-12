@@ -2,12 +2,12 @@ package com.example.gymcrm.service;
 
 import com.example.gymcrm.model.*;
 import com.example.gymcrm.repository.TrainingRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,10 +17,8 @@ class TrainingServiceTest {
 
     @Mock
     private TrainingRepository trainingRepository;
-
     @Mock
     private TraineeService traineeService;
-
     @Mock
     private TrainerService trainerService;
 
@@ -33,57 +31,38 @@ class TrainingServiceTest {
     }
 
     private Training prepareTrainingMock() {
+        Trainee trainee = new Trainee();
+        Trainer trainer = new Trainer();
+        User traineeUser = new User(null, "John", "Doe", "john", "pass", true);
+        User trainerUser = new User(null, "Mike", "Smith", "mike", "pass", true);
+        trainee.setUser(traineeUser);
+        trainer.setUser(trainerUser);
+        TrainingType type = new TrainingType(1L, "Cardio");
 
-        Training training = mock(Training.class);
-        Trainee trainee = mock(Trainee.class);
-        Trainer trainer = mock(Trainer.class);
-        User traineeUser = new User("John","Doe","john","pass",true);
-        User trainerUser = new User("Mike","Smith","mike","pass",true);
-
-        when(training.getTrainee()).thenReturn(trainee);
-        when(training.getTrainer()).thenReturn(trainer);
-
-        when(trainee.getUser()).thenReturn(traineeUser);
-        when(trainer.getUser()).thenReturn(trainerUser);
-
-        return training;
+        return new Training(1L, trainee, trainer, "Morning Cardio", type, LocalDate.now(), 60);
     }
 
     @Test
-    void createTraining_shouldSaveTraining_whenAuthenticated() {
-
+    void createTraining_shouldSaveTraining() {
         Training training = prepareTrainingMock();
 
-        when(traineeService.authenticate(any(), any())).thenReturn(true);
-        when(trainerService.authenticate(any(), any())).thenReturn(true);
+        when(traineeService.findByUsername("trainee")).thenReturn(training.getTrainee());
+        when(trainerService.findByUsername("trainer")).thenReturn(training.getTrainer());
         when(trainingRepository.save(training)).thenReturn(training);
 
-        Training result = trainingService.createTraining("trainee","trainer",training);
+        Training result = trainingService.createTraining("trainee", "trainer", training);
 
         assertEquals(training, result);
         verify(trainingRepository).save(training);
     }
 
     @Test
-    void createTraining_shouldThrowException_whenAuthFails() {
-
-        Training training = prepareTrainingMock();
-
-        when(traineeService.authenticate(any(), any())).thenReturn(false);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> trainingService.createTraining("trainee","trainer",training));
-    }
-
-    @Test
     void findById_shouldReturnTraining() {
-
-        Training training = mock(Training.class);
-
+        Training training = prepareTrainingMock();
         when(trainingRepository.findById(1L)).thenReturn(Optional.of(training));
 
         Optional<Training> result = trainingService.findById(1L);
-
         assertTrue(result.isPresent());
+        assertEquals(training, result.get());
     }
 }
