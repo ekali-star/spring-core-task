@@ -37,7 +37,7 @@ public class TrainerService extends UserService<Trainer> {
 
     @Override
     protected Optional<Trainer> findByUsernameOptional(String username) {
-        return trainerRepository.findByUser_Username(username);
+        return trainerRepository.findByUserUsername(username);
     }
 
     public Trainer updateTrainer(Auth auth, Trainer updatedTrainer) {

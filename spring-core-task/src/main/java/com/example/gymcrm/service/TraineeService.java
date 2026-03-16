@@ -44,7 +44,7 @@ public class TraineeService extends UserService<Trainee> {
 
     @Override
     protected Optional<Trainee> findByUsernameOptional(String username) {
-        return traineeRepository.findByUser_Username(username);
+        return traineeRepository.findByUserUsername(username);
     }
 
     public Trainee updateTrainee(Auth auth, Trainee updatedTrainee) {
@@ -87,7 +87,7 @@ public class TraineeService extends UserService<Trainee> {
             throw new IllegalArgumentException("Authentication failed");
         }
 
-        Trainee trainee = traineeRepository.findWithTrainersByUser_Username(auth.getUsername())
+        Trainee trainee = traineeRepository.findWithTrainersByUserUsername(auth.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
 
         Set<String> currentTrainerUsernames = trainee.getTrainers().stream()
@@ -98,7 +98,7 @@ public class TraineeService extends UserService<Trainee> {
                 .filter(username -> !currentTrainerUsernames.contains(username))
                 .collect(Collectors.toSet());
 
-        List<Trainer> newTrainers = trainerRepository.findByUser_UsernameIn(newTrainerUsernames);
+        List<Trainer> newTrainers = trainerRepository.findByUserUsernameIn(newTrainerUsernames);
 
         Set<String> foundUsernames = newTrainers.stream()
                 .map(trainer -> trainer.getUser().getUsername())

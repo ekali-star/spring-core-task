@@ -11,9 +11,9 @@ import java.util.Set;
 
 public interface TrainerRepository extends JpaRepository<Trainer, Long> {
 
-    Optional<Trainer> findByUser_Username(String username);
+    Optional<Trainer> findByUserUsername(String username);
 
-    List<Trainer> findByUser_UsernameIn(Set<String> usernames);
+    List<Trainer> findByUserUsernameIn(Set<String> usernames);
 
     @Query("SELECT t FROM Trainer t WHERE t NOT IN " +
             "(SELECT tr FROM Trainee tn JOIN tn.trainers tr WHERE tn.user.username = :traineeUsername)")
