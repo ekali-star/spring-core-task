@@ -1,48 +1,42 @@
 package com.example.gymcrm.model;
 
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Trainee extends User {
-    private LocalDate dateOfBirth;
-    private String address;
+@Entity
+@Table(name = "trainee")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Trainee implements UserComparable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private List<Training> trainings = new ArrayList<>();
 
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
+    @Column(name = "address")
+    private String address;
 
-    public String getAddress() {
-        return address;
-    }
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "trainee_trainer",
+            joinColumns = @JoinColumn(name = "trainee_id"),
+            inverseJoinColumns = @JoinColumn(name = "trainer_id")
+    )
+    private List<Trainer> trainers;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public List<Training> getTrainings() {
-        return trainings;
-    }
-
-    public void setTrainings(List<Training> trainings) {
-        this.trainings = trainings;
-    }
-
-    public void addTraining(Training training) {
-        trainings.add(training);
-    }
+    @OneToMany(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Training> trainings;
 }

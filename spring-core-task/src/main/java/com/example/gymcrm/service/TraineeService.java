@@ -1,98 +1,124 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.TraineeDao;
+import com.example.gymcrm.dto.Auth;
 import com.example.gymcrm.model.Trainee;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.gymcrm.model.Trainer;
+import com.example.gymcrm.repository.TraineeRepository;
+import com.example.gymcrm.repository.TrainerRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
-public class TraineeService {
+@Transactional
+public class TraineeService extends UserService<Trainee> {
 
-    private static final Logger log = LoggerFactory.getLogger(TraineeService.class);
+    private final TraineeRepository traineeRepository;
+    private final TrainerRepository trainerRepository;
 
-    private TraineeDao traineeDao;
-    private final AtomicLong idGenerator = new AtomicLong(1);
-
-    @Autowired
-    public void setTraineeDao(TraineeDao traineeDao) {
-        this.traineeDao = traineeDao;
+    public TraineeService(TraineeRepository traineeRepository, TrainerRepository trainerRepository) {
+        this.traineeRepository = traineeRepository;
+        this.trainerRepository = trainerRepository;
     }
 
-    public Trainee create(Trainee trainee) {
-        log.debug("Creating new trainee: {} {}", trainee.getFirstName(), trainee.getLastName());
-
-        Long id = idGenerator.getAndIncrement();
-
-        String username = CredentialsGenerator.generateUsername(
-                trainee.getFirstName(),
-                trainee.getLastName(),
-                traineeDao.findAll()
-        );
-        String password = CredentialsGenerator.generatePassword();
-
-        trainee.setUsername(username);
-        trainee.setPassword(password);
-        trainee.setActive(true);
-        trainee.setId(id);
-
-        traineeDao.save(id, trainee);
-
-        log.info("Trainee created successfully - ID: {}, Username: {}, Full Name: {} {}",
-                id, username, trainee.getFirstName(), trainee.getLastName());
-
-        return trainee;
+    @Override
+    protected JpaRepository<Trainee, Long> getRepository() {
+        return traineeRepository;
     }
 
-    public Trainee update(Long id, Trainee trainee) {
-        log.debug("Updating trainee with ID: {}", id);
+    @Override
+    protected Collection<Trainee> findAllUsers() {
+        return traineeRepository.findAll();
+    }
 
-        Trainee existing = traineeDao.findById(id);
-        if (existing == null) {
-            log.error("Update failed - Trainee not found with ID: {}", id);
-            throw new IllegalArgumentException("Trainee not found with id: " + id);
+    @Override
+    protected Long getId(Trainee user) {
+        return user.getId();
+    }
+
+    @Override
+    protected Optional<Trainee> findByUsernameOptional(String username) {
+        return traineeRepository.findByUserUsername(username);
+    }
+
+    public Trainee updateTrainee(Auth auth, Trainee updatedTrainee) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
         }
 
-        trainee.setId(id);
-        trainee.setUsername(existing.getUsername());
-        trainee.setPassword(existing.getPassword());
+        Trainee existing = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
 
-        traineeDao.save(id, trainee);
+        existing.setDateOfBirth(updatedTrainee.getDateOfBirth());
+        existing.setAddress(updatedTrainee.getAddress());
 
-        log.info("Trainee updated successfully - ID: {}, Username: {}", id, trainee.getUsername());
-        return trainee;
+        existing.getUser().setFirstName(updatedTrainee.getUser().getFirstName());
+        existing.getUser().setLastName(updatedTrainee.getUser().getLastName());
+
+        return traineeRepository.save(existing);
     }
 
-    public void delete(Long id) {
-        log.debug("Deleting trainee with ID: {}", id);
-
-        Trainee trainee = traineeDao.findById(id);
-        if (trainee == null) {
-            log.warn("Delete attempted for non-existent trainee - ID: {}", id);
-            return;
+    public void deleteTrainee(Auth auth) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
         }
 
-        traineeDao.delete(id);
-        log.info("Trainee deleted successfully - ID: {}, Username: {}", id, trainee.getUsername());
+        Trainee trainee = findByUsernameOptional(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
+
+        traineeRepository.delete(trainee);
     }
 
-    public Trainee findById(Long id) {
-        Trainee trainee = traineeDao.findById(id);
-        if (trainee == null) {
-            log.debug("Trainee not found with ID: {}", id);
-        } else {
-            log.debug("Trainee found - ID: {}, Username: {}", id, trainee.getUsername());
+    public List<Trainer> getUnassignedTrainers(Auth auth) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
         }
-        return trainee;
+        return trainerRepository.findNotAssignedToTrainee(auth.getUsername());
     }
 
-    public Collection<Trainee> findAll() {
-        Collection<Trainee> trainees = traineeDao.findAll();
-        log.debug("Retrieved {} trainees from storage", trainees.size());
-        return trainees;
+    public void updateTrainers(Auth auth, List<String> trainerUsernames) {
+        if (!authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        Trainee trainee = traineeRepository.findWithTrainersByUserUsername(auth.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
+
+        Set<String> currentTrainerUsernames = trainee.getTrainers().stream()
+                .map(trainer -> trainer.getUser().getUsername())
+                .collect(Collectors.toSet());
+
+        Set<String> newTrainerUsernames = trainerUsernames.stream()
+                .filter(username -> !currentTrainerUsernames.contains(username))
+                .collect(Collectors.toSet());
+
+        List<Trainer> newTrainers = trainerRepository.findByUserUsernameIn(newTrainerUsernames);
+
+        Set<String> foundUsernames = newTrainers.stream()
+                .map(trainer -> trainer.getUser().getUsername())
+                .collect(Collectors.toSet());
+
+        Set<String> missingUsernames = newTrainerUsernames.stream()
+                .filter(username -> !foundUsernames.contains(username))
+                .collect(Collectors.toSet());
+
+        if (!missingUsernames.isEmpty()) {
+            throw new IllegalArgumentException("Trainers not found: " + missingUsernames);
+        }
+
+        Set<String> requestedUsernamesSet = Set.copyOf(trainerUsernames);
+
+        trainee.getTrainers().removeIf(trainer ->
+                !requestedUsernamesSet.contains(trainer.getUser().getUsername()));
+
+        trainee.getTrainers().addAll(newTrainers);
+
+        traineeRepository.save(trainee);
     }
 }

@@ -1,32 +1,20 @@
 package com.example.gymcrm.model;
 
-public enum TrainingType {
-    CARDIO("Cardio"),
-    STRENGTH("Strength"),
-    FLEXIBILITY("Flexibility"),
-    BALANCE("Balance"),
-    HIIT("HIIT"),
-    YOGA("Yoga"),
-    PILATES("Pilates"),
-    CROSSFIT("Crossfit");
+import jakarta.persistence.*;
+import lombok.*;
 
-    private final String displayName;
+@Entity
+@Table(name = "training_type")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+public class TrainingType {
 
-    TrainingType(String displayName) {
-        this.displayName = displayName;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public static TrainingType fromString(String text) {
-        for (TrainingType type : TrainingType.values()) {
-            if (type.displayName.equalsIgnoreCase(text) ||
-                    type.name().equalsIgnoreCase(text)) {
-                return type;
-            }
-        }
-        return null;
-    }
+    @Column(name = "training_type_name", nullable = false)
+    private String trainingTypeName;
 }

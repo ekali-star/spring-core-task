@@ -1,5 +1,7 @@
 package com.example.gymcrm.facade;
 
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.dto.AuthCredentials;
 import com.example.gymcrm.model.*;
 import com.example.gymcrm.service.TraineeService;
 import com.example.gymcrm.service.TrainerService;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 
 @Component
 public class GymFacade {
@@ -16,72 +19,128 @@ public class GymFacade {
     private final TrainerService trainerService;
     private final TrainingService trainingService;
 
-    public GymFacade(
-            TraineeService traineeService,
-            TrainerService trainerService,
-            TrainingService trainingService) {
+    public GymFacade(TraineeService traineeService,
+                     TrainerService trainerService,
+                     TrainingService trainingService) {
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
     }
 
-    public Trainee createTrainee(Trainee trainee) {
+    public AuthCredentials createTrainee(Trainee trainee) {
         return traineeService.create(trainee);
     }
 
-    public Trainee updateTrainee(Long id, Trainee trainee) {
-        return traineeService.update(id, trainee);
+    public AuthCredentials createTrainer(Trainer trainer) {
+        return trainerService.create(trainer);
     }
 
-    public void deleteTrainee(Long id) {
-        traineeService.delete(id);
+    public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
+        return trainingService.createTraining(traineeUsername, trainerUsername, training);
     }
 
-    public Trainee getTrainee(Long id) {
+    public Trainee getTraineeById(Long id) {
         return traineeService.findById(id);
+    }
+
+    public Trainee getTraineeByUsername(String username) {
+        return traineeService.findByUsername(username);
     }
 
     public Collection<Trainee> getAllTrainees() {
         return traineeService.findAll();
     }
 
-    public Trainer createTrainer(Trainer trainer) {
-        return trainerService.create(trainer);
-    }
-
-    public Trainer updateTrainer(Long id, Trainer trainer) {
-        return trainerService.update(id, trainer);
-    }
-
-    public Trainer getTrainer(Long id) {
+    public Trainer getTrainerById(Long id) {
         return trainerService.findById(id);
+    }
+
+    public Trainer getTrainerByUsername(String username) {
+        return trainerService.findByUsername(username);
     }
 
     public Collection<Trainer> getAllTrainers() {
         return trainerService.findAll();
     }
 
-    public Training createTraining(Training training) {
-        return trainingService.create(training);
-    }
-
-    public Training getTraining(Long id) {
-        return trainingService.findById(id);
-    }
-
     public Collection<Training> getAllTrainings() {
         return trainingService.findAll();
     }
 
-    public Collection<Training> getTrainingsByTrainee(Long traineeId) {
-        return trainingService.findByTraineeId(traineeId);
+    public List<Training> getTraineeTrainings(String username, String password,
+                                              LocalDate fromDate, LocalDate toDate,
+                                              String trainerName, Long trainingTypeId) {
+        Auth auth = new Auth(username, password);
+        return trainingService.getTraineeTrainings(auth, fromDate, toDate, trainerName, trainingTypeId);
     }
 
-    public Collection<Training> getTrainingsByTrainer(Long trainerId) {
-        return trainingService.findByTrainerId(trainerId);
+    public List<Training> getTrainerTrainings(String username, String password,
+                                              LocalDate fromDate, LocalDate toDate,
+                                              String traineeName) {
+        Auth auth = new Auth(username, password);
+        return trainingService.getTrainerTrainings(auth, fromDate, toDate, traineeName);
     }
 
-    public Collection<Training> getTrainingsByDate(LocalDate date) {
-        return trainingService.findByDate(date);
+    public List<Trainer> getUnassignedTrainers(String username, String password) {
+        Auth auth = new Auth(username, password);
+        return traineeService.getUnassignedTrainers(auth);
+    }
+
+    public Trainee updateTrainee(String username, String password, Trainee trainee) {
+        Auth auth = new Auth(username, password);
+        return traineeService.updateTrainee(auth, trainee);
+    }
+
+    public Trainer updateTrainer(String username, String password, Trainer trainer) {
+        Auth auth = new Auth(username, password);
+        return trainerService.updateTrainer(auth, trainer);
+    }
+
+    public void updateTraineeTrainers(String username, String password, List<String> trainerUsernames) {
+        Auth auth = new Auth(username, password);
+        traineeService.updateTrainers(auth, trainerUsernames);
+    }
+
+    public void deleteTrainee(String username, String password) {
+        Auth auth = new Auth(username, password);
+        traineeService.deleteTrainee(auth);
+    }
+
+    public void changeTraineePassword(String username, String password, String newPassword) {
+        Auth auth = new Auth(username, password);
+        traineeService.changePassword(auth, newPassword);
+    }
+
+    public void changeTrainerPassword(String username, String password, String newPassword) {
+        Auth auth = new Auth(username, password);
+        trainerService.changePassword(auth, newPassword);
+    }
+
+    public void activateTrainee(String username, String password) {
+        Auth auth = new Auth(username, password);
+        traineeService.setActiveStatus(auth, true);
+    }
+
+    public void deactivateTrainee(String username, String password) {
+        Auth auth = new Auth(username, password);
+        traineeService.setActiveStatus(auth, false);
+    }
+
+    public void activateTrainer(String username, String password) {
+        Auth auth = new Auth(username, password);
+        trainerService.setActiveStatus(auth, true);
+    }
+
+    public void deactivateTrainer(String username, String password) {
+        Auth auth = new Auth(username, password);
+        trainerService.setActiveStatus(auth, false);
+    }
+
+    public boolean authenticateTrainee(String username, String password) {
+        return traineeService.authenticate(username, password);
+    }
+
+    public boolean authenticateTrainer(String username, String password) {
+        return trainerService.authenticate(username, password);
     }
 }

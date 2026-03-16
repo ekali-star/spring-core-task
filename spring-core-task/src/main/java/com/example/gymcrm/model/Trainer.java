@@ -1,38 +1,34 @@
 package com.example.gymcrm.model;
 
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class Trainer extends User {
-    private String specialization;
+@Entity
+@Table(name = "trainer")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Trainer implements UserComparable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private List<Training> trainings = new ArrayList<>();
 
-    public String getSpecialization() {
-        return specialization;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "specialization", nullable = false)
+    private TrainingType specialization;
 
-    public void setSpecialization(String specialization) {
-        this.specialization = specialization;
-    }
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    public Long getId() {
-        return id;
-    }
+    @ManyToMany(mappedBy = "trainers", cascade = CascadeType.ALL)
+    private List<Trainee> trainees;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public List<Training> getTrainings() {
-        return trainings;
-    }
-
-    public void setTrainings(List<Training> trainings) {
-        this.trainings = trainings;
-    }
-
-    public void addTraining(Training training) {
-        trainings.add(training);
-    }
+    @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Training> trainings;
 }

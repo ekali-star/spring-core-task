@@ -1,80 +1,86 @@
 package com.example.gymcrm.service;
 
-import com.example.gymcrm.dao.TrainingDao;
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.model.Trainee;
+import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.model.Training;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.gymcrm.repository.TrainingRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Optional;
 
 @Service
+@Transactional
 public class TrainingService {
 
-    private static final Logger log = LoggerFactory.getLogger(TrainingService.class);
+    private final TrainingRepository trainingRepository;
+    private final TraineeService traineeService;
+    private final TrainerService trainerService;
 
-    private TrainingDao trainingDao;
-    private final AtomicLong idGenerator = new AtomicLong(1);
-
-    @Autowired
-    public void setTrainingDao(TrainingDao trainingDao) {
-        this.trainingDao = trainingDao;
+    public TrainingService(TrainingRepository trainingRepository,
+                           TraineeService traineeService,
+                           TrainerService trainerService) {
+        this.trainingRepository = trainingRepository;
+        this.traineeService = traineeService;
+        this.trainerService = trainerService;
     }
 
-    public Training create(Training training) {
-        log.debug("Creating new training: {}", training.getTrainingName());
-
-        Long id = idGenerator.getAndIncrement();
-        training.setId(id);
-
-        trainingDao.save(id, training);
-
-        log.info("Training created successfully - ID: {}, Name: {}, Type: {}, Date: {}",
-                id, training.getTrainingName(), training.getTrainingType(), training.getTrainingDate());
-
-        return training;
-    }
-
-    public Training findById(Long id) {
-        Training training = trainingDao.findById(id);
-        if (training == null) {
-            log.debug("Training not found with ID: {}", id);
-        } else {
-            log.debug("Training found - ID: {}, Name: {}", id, training.getTrainingName());
+    public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
+        Trainee trainee = traineeService.findByUsername(traineeUsername);
+        if (trainee == null) {
+            throw new IllegalArgumentException("Trainee not found: " + traineeUsername);
         }
-        return training;
+
+        Trainer trainer = trainerService.findByUsername(trainerUsername);
+        if (trainer == null) {
+            throw new IllegalArgumentException("Trainer not found: " + trainerUsername);
+        }
+
+        if (!trainee.getUser().getIsActive() || !trainer.getUser().getIsActive()) {
+            throw new IllegalArgumentException("Trainee or Trainer is not active");
+        }
+
+        training.setTrainee(trainee);
+        training.setTrainer(trainer);
+
+        return trainingRepository.save(training);
     }
 
-    public Collection<Training> findAll() {
-        Collection<Training> trainings = trainingDao.findAll();
-        log.debug("Retrieved {} trainings from storage", trainings.size());
-        return trainings;
+    public List<Training> getTraineeTrainings(Auth auth,
+                                              LocalDate fromDate,
+                                              LocalDate toDate,
+                                              String trainerName,
+                                              Long trainingTypeId) {
+        if (!traineeService.authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        return trainingRepository.findTraineeTrainings(
+                auth.getUsername(), fromDate, toDate, trainerName, trainingTypeId
+        );
     }
 
-    public Collection<Training> findByTraineeId(Long traineeId) {
-        Collection<Training> trainings = trainingDao.findAll().stream()
-                .filter(t -> t.getTraineeId() != null && t.getTraineeId().equals(traineeId))
-                .toList();
-        log.debug("Found {} trainings for trainee ID: {}", trainings.size(), traineeId);
-        return trainings;
+    public List<Training> getTrainerTrainings(Auth auth,
+                                              LocalDate fromDate,
+                                              LocalDate toDate,
+                                              String traineeName) {
+        if (!trainerService.authenticate(auth)) {
+            throw new IllegalArgumentException("Authentication failed");
+        }
+
+        return trainingRepository.findTrainerTrainings(
+                auth.getUsername(), fromDate, toDate, traineeName
+        );
     }
 
-    public Collection<Training> findByTrainerId(Long trainerId) {
-        Collection<Training> trainings = trainingDao.findAll().stream()
-                .filter(t -> t.getTrainerId() != null && t.getTrainerId().equals(trainerId))
-                .toList();
-        log.debug("Found {} trainings for trainer ID: {}", trainings.size(), trainerId);
-        return trainings;
+    public Optional<Training> findById(Long id) {
+        return trainingRepository.findById(id);
     }
 
-    public Collection<Training> findByDate(LocalDate date) {
-        Collection<Training> trainings = trainingDao.findAll().stream()
-                .filter(t -> t.getTrainingDate() != null && t.getTrainingDate().equals(date))
-                .toList();
-        log.debug("Found {} trainings for date: {}", trainings.size(), date);
-        return trainings;
+    public List<Training> findAll() {
+        return trainingRepository.findAll();
     }
 }
