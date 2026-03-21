@@ -44,4 +44,12 @@ public class Training {
     @Min(1)
     @Column(nullable = false)
     private Integer trainingDuration;
+
+    public static Training create(String trainingName, LocalDate trainingDate, Integer trainingDuration) {
+        Training training = new Training();
+        training.setTrainingName(trainingName);
+        training.setTrainingDate(trainingDate);
+        training.setTrainingDuration(trainingDuration);
+        return training;
+    }
 }

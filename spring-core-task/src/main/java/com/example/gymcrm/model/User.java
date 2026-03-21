@@ -34,4 +34,10 @@ public class User {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    public static User create(String firstName, String lastName) {
+        User u = new User();
+        u.firstName = firstName;
+        u.lastName = lastName;
+        return u;
+    }
 }

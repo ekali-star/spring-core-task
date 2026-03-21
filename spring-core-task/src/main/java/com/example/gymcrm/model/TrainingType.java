@@ -17,4 +17,10 @@ public class TrainingType {
 
     @Column(name = "training_type_name", nullable = false)
     private String trainingTypeName;
+
+    public static TrainingType create(Long id) {
+        TrainingType t  = new TrainingType();
+        t.setId(id);
+        return t;
+    }
 }
