@@ -8,6 +8,7 @@ import lombok.*;
 @Table(name = "users")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class User {
@@ -33,11 +34,4 @@ public class User {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
-
-    public static User create(String firstName, String lastName) {
-        User u = new User();
-        u.firstName = firstName;
-        u.lastName = lastName;
-        return u;
-    }
 }

@@ -3,6 +3,8 @@ package com.example.gymcrm.dto.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class AddTrainingRequest {
@@ -11,6 +13,6 @@ public class AddTrainingRequest {
 
     private String trainingName;
     private Long trainingTypeId;
-    private java.time.LocalDate trainingDate;
+    private LocalDate trainingDate;
     private Integer trainingDuration;
 }

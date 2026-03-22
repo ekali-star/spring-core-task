@@ -3,6 +3,8 @@ package com.example.gymcrm.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 public class TraineeProfileResponse {
@@ -12,5 +14,5 @@ public class TraineeProfileResponse {
     private java.time.LocalDate dateOfBirth;
     private String address;
     private Boolean isActive;
-    private java.util.List<TrainerSummaryDTO> trainers;
+    private List<TrainerSummaryDTO> trainers;
 }

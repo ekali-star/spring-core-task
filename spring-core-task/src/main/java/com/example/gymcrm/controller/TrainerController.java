@@ -1,14 +1,15 @@
 package com.example.gymcrm.controller;
 
 
-import com.example.gymcrm.dto.request.*;
-import com.example.gymcrm.dto.response.*;
+import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.dto.AuthCredentials;
+import com.example.gymcrm.dto.request.ActivateRequest;
+import com.example.gymcrm.dto.request.TrainerRegistrationRequest;
 import com.example.gymcrm.facade.GymFacade;
-import com.example.gymcrm.model.*;
-
+import com.example.gymcrm.model.Trainer;
+import com.example.gymcrm.model.TrainingType;
+import com.example.gymcrm.model.User;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 
 @RestController
@@ -22,11 +23,11 @@ public class TrainerController {
     }
 
     @PostMapping
-    public Object register(@RequestBody TrainerRegistrationRequest req) {
+    public AuthCredentials register(@RequestBody TrainerRegistrationRequest req) {
 
-        User user = User.create(req.getFirstName(), req.getLastName());
+        User user = User.builder().firstName(req.getFirstName()).lastName(req.getLastName()).build();
 
-        TrainingType type = TrainingType.create(req.getSpecializationId());
+        TrainingType type = TrainingType.builder().id(req.getSpecializationId()).build();
 
         Trainer t = new Trainer();
         t.setUser(user);
