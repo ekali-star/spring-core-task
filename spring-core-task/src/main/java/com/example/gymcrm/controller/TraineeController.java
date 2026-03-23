@@ -1,17 +1,16 @@
 package com.example.gymcrm.controller;
 
 import com.example.gymcrm.dto.AuthCredentials;
-import com.example.gymcrm.dto.request.ActivateRequest;
-import com.example.gymcrm.dto.request.TraineeRegistrationRequest;
-import com.example.gymcrm.dto.request.UpdateTraineeRequest;
-import com.example.gymcrm.dto.request.UpdateTraineeTrainersRequest;
+import com.example.gymcrm.dto.request.*;
 import com.example.gymcrm.dto.response.TraineeProfileResponse;
 import com.example.gymcrm.dto.response.TrainerSummaryDTO;
+import com.example.gymcrm.dto.response.TrainingResponse;
 import com.example.gymcrm.facade.GymFacade;
-import com.example.gymcrm.model.Trainee;
-import com.example.gymcrm.model.User;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -25,91 +24,55 @@ public class TraineeController {
     }
 
     @PostMapping
-    public AuthCredentials register(@RequestBody TraineeRegistrationRequest req) {
-        User user = User.builder().firstName(req.getFirstName()).lastName(req.getLastName()).build();
-
-        Trainee t = new Trainee();
-        t.setUser(user);
-        t.setDateOfBirth(req.getDateOfBirth());
-        t.setAddress(req.getAddress());
-
-        return facade.createTrainee(t);
+    public AuthCredentials register(@Valid @RequestBody TraineeRegistrationRequest req) {
+        return facade.createTrainee(req);
     }
 
     @GetMapping
     public TraineeProfileResponse get(@RequestParam String username) {
-        Trainee t = facade.getTraineeByUsername(username);
-
-        return new TraineeProfileResponse(
-                t.getUser().getUsername(),
-                t.getUser().getFirstName(),
-                t.getUser().getLastName(),
-                t.getDateOfBirth(),
-                t.getAddress(),
-                t.getUser().getIsActive(),
-                t.getTrainers().stream()
-                        .map(tr -> new TrainerSummaryDTO(
-                                tr.getUser().getUsername(),
-                                tr.getUser().getFirstName(),
-                                tr.getUser().getLastName(),
-                                tr.getSpecialization().getTrainingTypeName()
-                        )).toList()
-        );
+        return facade.getTraineeByUsername(username);
     }
 
     @PutMapping
-    public TraineeProfileResponse update(@RequestBody UpdateTraineeRequest req) {
-
-        User user = User.builder().firstName(req.getFirstName()).lastName(req.getLastName()).build();
-
-        Trainee t = new Trainee();
-        t.setUser(user);
-        t.setDateOfBirth(req.getDateOfBirth());
-        t.setAddress(req.getAddress());
-
-        Trainee updated = facade.updateTrainee(req.getUsername(), req.getPassword(), t);
-
-        return get(updated.getUser().getUsername());
+    public TraineeProfileResponse update(@Valid @RequestBody UpdateTraineeRequest req) {
+        return facade.updateTrainee(req);
     }
 
     @DeleteMapping
-    public void delete(@RequestParam String username,
-                       @RequestParam String password) {
-        facade.deleteTrainee(username, password);
+    public ResponseEntity<Void> delete(@RequestParam String username) {
+        facade.deleteTrainee(username);
+        return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/activate")
-    public void activate(@RequestBody ActivateRequest req) {
-        if (req.getIsActive()) {
-            facade.activateTrainee(req.getUsername(), req.getPassword());
-        } else {
-            facade.deactivateTrainee(req.getUsername(), req.getPassword());
-        }
+    public ResponseEntity<Void> activate(@Valid @RequestBody ActivateRequest req) {
+        facade.setTraineeActiveStatus(req);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/trainers/unassigned")
-    public List<TrainerSummaryDTO> unassigned(@RequestParam String username,
-                                              @RequestParam String password) {
-
-        return facade.getUnassignedTrainers(username, password)
-                .stream()
-                .map(tr -> new TrainerSummaryDTO(
-                        tr.getUser().getUsername(),
-                        tr.getUser().getFirstName(),
-                        tr.getUser().getLastName(),
-                        tr.getSpecialization().getTrainingTypeName()
-                )).toList();
+    public List<TrainerSummaryDTO> unassigned(@RequestParam String username) {
+        return facade.getUnassignedTrainers(username);
     }
 
     @PutMapping("/trainers")
-    public List<TrainerSummaryDTO> updateTrainers(@RequestBody UpdateTraineeTrainersRequest req) {
+    public List<TrainerSummaryDTO> updateTrainers(@Valid @RequestBody UpdateTraineeTrainersRequest req) {
+        return facade.updateTraineeTrainers(req);
+    }
 
-        facade.updateTraineeTrainers(
-                req.getUsername(),
-                req.getPassword(),
-                req.getTrainerUsernames()
-        );
-
-        return get(req.getUsername()).getTrainers();
+    @GetMapping("/trainings")
+    public List<TrainingResponse> getTrainings(
+            @RequestParam String username,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo,
+            @RequestParam(required = false) String trainerName,
+            @RequestParam(required = false) Long trainingTypeId) {
+        TraineeTrainingQueryRequest req = new TraineeTrainingQueryRequest();
+        req.setUsername(username);
+        req.setPeriodFrom(periodFrom);
+        req.setPeriodTo(periodTo);
+        req.setTrainerName(trainerName);
+        req.setTrainingTypeId(trainingTypeId);
+        return facade.getTraineeTrainings(req);
     }
 }

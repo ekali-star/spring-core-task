@@ -2,9 +2,7 @@ package com.example.gymcrm.controller;
 
 import com.example.gymcrm.dto.response.TrainingTypeResponse;
 import com.example.gymcrm.facade.GymFacade;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,10 +18,6 @@ public class TrainingTypeController {
 
     @GetMapping
     public List<TrainingTypeResponse> getAll() {
-        return facade.getAllTrainings().stream()
-                .map(t -> new TrainingTypeResponse(
-                        t.getTrainingType().getId(),
-                        t.getTrainingType().getTrainingTypeName()
-                )).toList();
+        return facade.getAllTrainingTypes();
     }
 }

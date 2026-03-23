@@ -6,12 +6,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class GymCrmApplication {
-    public static void main(String[] args) {
-        ApplicationContext context =
-                new AnnotationConfigApplicationContext(AppConfig.class);
-
-        GymFacade facade = context.getBean(GymFacade.class);
-
-        System.out.println("Gym CRM Application started successfully!");
-    }
+//    public static void main(String[] args) {
+//        ApplicationContext context =
+//                new AnnotationConfigApplicationContext(AppConfig.class);
+//
+//        GymFacade facade = context.getBean(GymFacade.class);
+//
+//        System.out.println("Gym CRM Application started successfully!");
+//    }
 }

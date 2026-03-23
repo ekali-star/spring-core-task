@@ -2,14 +2,14 @@ package com.example.gymcrm.facade;
 
 import com.example.gymcrm.dto.Auth;
 import com.example.gymcrm.dto.AuthCredentials;
+import com.example.gymcrm.dto.request.*;
+import com.example.gymcrm.dto.response.*;
 import com.example.gymcrm.model.*;
 import com.example.gymcrm.service.TraineeService;
 import com.example.gymcrm.service.TrainerService;
 import com.example.gymcrm.service.TrainingService;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 
 @Component
@@ -27,113 +27,144 @@ public class GymFacade {
         this.trainingService = trainingService;
     }
 
-    public AuthCredentials createTrainee(Trainee trainee) {
+    public void login(LoginRequest req) {
+        traineeService.authenticate(req.getUsername(), req.getPassword());
+    }
+
+    public void changePassword(ChangePasswordRequest req) {
+        Auth auth = new Auth(req.getUsername(), req.getOldPassword());
+        if (traineeService.authenticate(req.getUsername(), req.getOldPassword())) {
+            traineeService.changePassword(auth, req.getNewPassword());
+        } else {
+            trainerService.changePassword(auth, req.getNewPassword());
+        }
+    }
+
+    public AuthCredentials createTrainee(TraineeRegistrationRequest req) {
+        User user = User.builder()
+                .firstName(req.getFirstName())
+                .lastName(req.getLastName())
+                .build();
+        Trainee trainee = new Trainee();
+        trainee.setUser(user);
+        trainee.setDateOfBirth(req.getDateOfBirth());
+        trainee.setAddress(req.getAddress());
         return traineeService.create(trainee);
     }
 
-    public AuthCredentials createTrainer(Trainer trainer) {
+    public TraineeProfileResponse getTraineeByUsername(String username) {
+        return toTraineeProfile(traineeService.findByUsername(username));
+    }
+
+    public TraineeProfileResponse updateTrainee(UpdateTraineeRequest req) {
+        Auth auth = new Auth(req.getUsername(), req.getPassword());
+        User user = User.builder()
+                .firstName(req.getFirstName())
+                .lastName(req.getLastName())
+                .build();
+        Trainee patch = new Trainee();
+        patch.setUser(user);
+        patch.setDateOfBirth(req.getDateOfBirth());
+        patch.setAddress(req.getAddress());
+        return toTraineeProfile(traineeService.updateTrainee(auth, patch));
+    }
+
+    public void deleteTrainee(String username) {
+        traineeService.deleteTrainee(username);
+    }
+
+    public void setTraineeActiveStatus(ActivateRequest req) {
+        traineeService.setActiveStatus(req.getUsername(), req.getIsActive());
+    }
+
+    public List<TrainerSummaryDTO> getUnassignedTrainers(String username) {
+        return traineeService.getUnassignedTrainers(username)
+                .stream()
+                .map(this::toTrainerSummary)
+                .toList();
+    }
+
+    public List<TrainerSummaryDTO> updateTraineeTrainers(UpdateTraineeTrainersRequest req) {
+        traineeService.updateTrainers(req.getUsername(), req.getTrainerUsernames());
+        return getTraineeByUsername(req.getUsername()).getTrainers();
+    }
+
+    public List<TrainingResponse> getTraineeTrainings(TraineeTrainingQueryRequest req) {
+        return trainingService.getTraineeTrainings(
+                req.getUsername(),
+                req.getPeriodFrom(),
+                req.getPeriodTo(),
+                req.getTrainerName(),
+                req.getTrainingTypeId()
+        ).stream().map(t -> new TrainingResponse(
+                t.getTrainingName(),
+                t.getTrainingDate(),
+                t.getTrainingType().getTrainingTypeName(),
+                t.getTrainingDuration(),
+                t.getTrainer().getUser().getUsername()
+        )).toList();
+    }
+
+    public AuthCredentials createTrainer(TrainerRegistrationRequest req) {
+        User user = User.builder()
+                .firstName(req.getFirstName())
+                .lastName(req.getLastName())
+                .build();
+        Trainer trainer = new Trainer();
+        trainer.setUser(user);
+        trainer.setSpecialization(TrainingType.builder().id(req.getSpecializationId()).build());
         return trainerService.create(trainer);
     }
 
-    public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
-        return trainingService.createTraining(traineeUsername, trainerUsername, training);
+    public TrainerProfileResponse getTrainerByUsername(String username) {
+        return toTrainerProfile(trainerService.findByUsername(username));
     }
 
-    public Trainee getTraineeById(Long id) {
-        return traineeService.findById(id);
+    public TrainerProfileResponse updateTrainer(UpdateTrainerRequest req) {
+        Auth auth = new Auth(req.getUsername(), req.getPassword());
+        User user = User.builder()
+                .firstName(req.getFirstName())
+                .lastName(req.getLastName())
+                .build();
+        Trainer patch = new Trainer();
+        patch.setUser(user);
+        return toTrainerProfile(trainerService.updateTrainer(auth, patch));
     }
 
-    public Trainee getTraineeByUsername(String username) {
-        return traineeService.findByUsername(username);
+    public void setTrainerActiveStatus(ActivateRequest req) {
+        trainerService.setActiveStatus(req.getUsername(), req.getIsActive());
     }
 
-    public Collection<Trainee> getAllTrainees() {
-        return traineeService.findAll();
+    public List<TrainingResponse> getTrainerTrainings(TrainerTrainingQueryRequest req) {
+        return trainingService.getTrainerTrainings(
+                req.getUsername(),
+                req.getPeriodFrom(),
+                req.getPeriodTo(),
+                req.getTraineeName()
+        ).stream().map(t -> new TrainingResponse(
+                t.getTrainingName(),
+                t.getTrainingDate(),
+                t.getTrainingType().getTrainingTypeName(),
+                t.getTrainingDuration(),
+                t.getTrainee().getUser().getUsername()
+        )).toList();
     }
 
-    public Trainer getTrainerById(Long id) {
-        return trainerService.findById(id);
+    public void createTraining(AddTrainingRequest req) {
+        Training t = Training.builder()
+                .trainingName(req.getTrainingName())
+                .trainingDate(req.getTrainingDate())
+                .trainingDuration(req.getTrainingDuration())
+                .build();
+        trainingService.createTraining(req.getTraineeUsername(), req.getTrainerUsername(), t);
     }
 
-    public Trainer getTrainerByUsername(String username) {
-        return trainerService.findByUsername(username);
-    }
-
-    public Collection<Trainer> getAllTrainers() {
-        return trainerService.findAll();
-    }
-
-    public Collection<Training> getAllTrainings() {
-        return trainingService.findAll();
-    }
-
-    public List<Training> getTraineeTrainings(String username, String password,
-                                              LocalDate fromDate, LocalDate toDate,
-                                              String trainerName, Long trainingTypeId) {
-        Auth auth = new Auth(username, password);
-        return trainingService.getTraineeTrainings(auth, fromDate, toDate, trainerName, trainingTypeId);
-    }
-
-    public List<Training> getTrainerTrainings(String username, String password,
-                                              LocalDate fromDate, LocalDate toDate,
-                                              String traineeName) {
-        Auth auth = new Auth(username, password);
-        return trainingService.getTrainerTrainings(auth, fromDate, toDate, traineeName);
-    }
-
-    public List<Trainer> getUnassignedTrainers(String username, String password) {
-        Auth auth = new Auth(username, password);
-        return traineeService.getUnassignedTrainers(auth);
-    }
-
-    public Trainee updateTrainee(String username, String password, Trainee trainee) {
-        Auth auth = new Auth(username, password);
-        return traineeService.updateTrainee(auth, trainee);
-    }
-
-    public Trainer updateTrainer(String username, String password, Trainer trainer) {
-        Auth auth = new Auth(username, password);
-        return trainerService.updateTrainer(auth, trainer);
-    }
-
-    public void updateTraineeTrainers(String username, String password, List<String> trainerUsernames) {
-        Auth auth = new Auth(username, password);
-        traineeService.updateTrainers(auth, trainerUsernames);
-    }
-
-    public void deleteTrainee(String username, String password) {
-        Auth auth = new Auth(username, password);
-        traineeService.deleteTrainee(auth);
-    }
-
-    public void changeTraineePassword(String username, String password, String newPassword) {
-        Auth auth = new Auth(username, password);
-        traineeService.changePassword(auth, newPassword);
-    }
-
-    public void changeTrainerPassword(String username, String password, String newPassword) {
-        Auth auth = new Auth(username, password);
-        trainerService.changePassword(auth, newPassword);
-    }
-
-    public void activateTrainee(String username, String password) {
-        Auth auth = new Auth(username, password);
-        traineeService.setActiveStatus(auth, true);
-    }
-
-    public void deactivateTrainee(String username, String password) {
-        Auth auth = new Auth(username, password);
-        traineeService.setActiveStatus(auth, false);
-    }
-
-    public void activateTrainer(String username, String password) {
-        Auth auth = new Auth(username, password);
-        trainerService.setActiveStatus(auth, true);
-    }
-
-    public void deactivateTrainer(String username, String password) {
-        Auth auth = new Auth(username, password);
-        trainerService.setActiveStatus(auth, false);
+    public List<TrainingTypeResponse> getAllTrainingTypes() {
+        return trainingService.findAll().stream()
+                .map(t -> new TrainingTypeResponse(
+                        t.getTrainingType().getId(),
+                        t.getTrainingType().getTrainingTypeName()))
+                .toList();
     }
 
     public boolean authenticateTrainee(String username, String password) {
@@ -142,5 +173,45 @@ public class GymFacade {
 
     public boolean authenticateTrainer(String username, String password) {
         return trainerService.authenticate(username, password);
+    }
+
+    private TraineeProfileResponse toTraineeProfile(Trainee t) {
+        return new TraineeProfileResponse(
+                t.getUser().getUsername(),
+                t.getUser().getFirstName(),
+                t.getUser().getLastName(),
+                t.getDateOfBirth(),
+                t.getAddress(),
+                t.getUser().getIsActive(),
+                t.getTrainers().stream().map(this::toTrainerSummary).toList()
+        );
+    }
+
+    private TrainerProfileResponse toTrainerProfile(Trainer tr) {
+        return new TrainerProfileResponse(
+                tr.getUser().getUsername(),
+                tr.getUser().getFirstName(),
+                tr.getUser().getLastName(),
+                tr.getSpecialization().getTrainingTypeName(),
+                tr.getUser().getIsActive(),
+                tr.getTrainees().stream().map(this::toTraineeSummary).toList()
+        );
+    }
+
+    private TrainerSummaryDTO toTrainerSummary(Trainer tr) {
+        return new TrainerSummaryDTO(
+                tr.getUser().getUsername(),
+                tr.getUser().getFirstName(),
+                tr.getUser().getLastName(),
+                tr.getSpecialization().getTrainingTypeName()
+        );
+    }
+
+    private TraineeSummaryDTO toTraineeSummary(Trainee t) {
+        return new TraineeSummaryDTO(
+                t.getUser().getUsername(),
+                t.getUser().getFirstName(),
+                t.getUser().getLastName()
+        );
     }
 }
