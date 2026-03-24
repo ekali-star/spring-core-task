@@ -6,10 +6,8 @@ import com.example.gymcrm.dto.response.TrainerProfileResponse;
 import com.example.gymcrm.dto.response.TrainingResponse;
 import com.example.gymcrm.facade.GymFacade;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -23,37 +21,61 @@ public class TrainerController {
     }
 
     @PostMapping
-    public AuthCredentials register(@Valid @RequestBody TrainerRegistrationRequest req) {
+    public Object register(@Valid @RequestBody TrainerRegistrationRequest req) {
         return facade.createTrainer(req);
     }
 
     @GetMapping
-    public TrainerProfileResponse get(@RequestParam String username) {
-        return facade.getTrainerByUsername(username);
+    public TrainerProfileResponse get(
+            @RequestParam String username,
+            @RequestHeader String authUsername,
+            @RequestHeader String authPassword) {
+
+        return facade.getTrainerByUsername(
+                new AuthCredentials(authUsername, authPassword),
+                username
+        );
     }
 
     @PutMapping
-    public TrainerProfileResponse update(@Valid @RequestBody UpdateTrainerRequest req) {
-        return facade.updateTrainer(req);
+    public TrainerProfileResponse update(
+            @Valid @RequestBody UpdateTrainerRequest req,
+            @RequestHeader String authUsername,
+            @RequestHeader String authPassword) {
+
+        return facade.updateTrainer(
+                new AuthCredentials(authUsername, authPassword),
+                req.getUsername(),
+                req
+        );
     }
 
     @PatchMapping("/activate")
-    public ResponseEntity<Void> activate(@Valid @RequestBody ActivateRequest req) {
-        facade.setTrainerActiveStatus(req);
-        return ResponseEntity.ok().build();
+    public void activate(
+            @Valid @RequestBody ActivateRequest req,
+            @RequestHeader String authUsername,
+            @RequestHeader String authPassword) {
+
+        facade.setTrainerActiveStatus(
+                new AuthCredentials(authUsername, authPassword),
+                req.getUsername(),
+                req.getIsActive()
+        );
     }
 
     @GetMapping("/trainings")
     public List<TrainingResponse> getTrainings(
             @RequestParam String username,
-            @RequestParam(required = false) LocalDate periodFrom,
-            @RequestParam(required = false) LocalDate periodTo,
-            @RequestParam(required = false) String traineeName) {
-        TrainerTrainingQueryRequest req = new TrainerTrainingQueryRequest();
-        req.setUsername(username);
-        req.setPeriodFrom(periodFrom);
-        req.setPeriodTo(periodTo);
-        req.setTraineeName(traineeName);
-        return facade.getTrainerTrainings(req);
+            @ModelAttribute TrainerTrainingQueryRequest query,
+            @RequestHeader String authUsername,
+            @RequestHeader String authPassword) {
+
+        return facade.getTrainerTrainings(
+                new AuthCredentials(authUsername, authPassword),
+                username,
+                query.getPeriodFrom(),
+                query.getPeriodTo(),
+                query.getTraineeName()
+        );
     }
 }

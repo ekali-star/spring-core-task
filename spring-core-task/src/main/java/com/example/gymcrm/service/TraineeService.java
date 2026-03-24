@@ -47,12 +47,12 @@ public class TraineeService extends UserService<Trainee> {
         return traineeRepository.findByUserUsername(username);
     }
 
-    public Trainee updateTrainee(Auth auth, Trainee updatedTrainee) {
+    public Trainee updateTrainee(Auth auth, String username, Trainee updatedTrainee) {
         if (!authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
 
-        Trainee existing = findByUsernameOptional(auth.getUsername())
+        Trainee existing = findByUsernameOptional(username)
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found"));
 
         existing.setDateOfBirth(updatedTrainee.getDateOfBirth());

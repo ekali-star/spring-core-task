@@ -10,6 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Configuration
 @EnableWebMvc
@@ -21,10 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        for (int i = 0; i < converters.size(); i++) {
-            if (converters.get(i) instanceof MappingJackson2HttpMessageConverter) {
-                converters.set(i, new MappingJackson2HttpMessageConverter(objectMapper));
-            }
-        }
+        IntStream.range(0, converters.size())
+                .filter(i -> converters.get(i) instanceof MappingJackson2HttpMessageConverter)
+                .forEach(i -> converters.set(i, new MappingJackson2HttpMessageConverter(objectMapper)));
     }
 }

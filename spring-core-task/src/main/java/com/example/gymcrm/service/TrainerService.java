@@ -40,15 +40,14 @@ public class TrainerService extends UserService<Trainer> {
         return trainerRepository.findByUserUsername(username);
     }
 
-    public Trainer updateTrainer(Auth auth, Trainer updatedTrainer) {
+    public Trainer updateTrainer(Auth auth, String username, Trainer updatedTrainer) {
         if (!authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
 
-        Trainer existing = findByUsernameOptional(auth.getUsername())
+        Trainer existing = findByUsernameOptional(username)
                 .orElseThrow(() -> new IllegalArgumentException("Trainer not found"));
 
-        existing.setSpecialization(updatedTrainer.getSpecialization());
         existing.getUser().setFirstName(updatedTrainer.getUser().getFirstName());
         existing.getUser().setLastName(updatedTrainer.getUser().getLastName());
 

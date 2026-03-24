@@ -3,6 +3,7 @@ package com.example.gymcrm.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -11,7 +12,7 @@ public class TraineeProfileResponse {
     private String username;
     private String firstName;
     private String lastName;
-    private java.time.LocalDate dateOfBirth;
+    private LocalDate dateOfBirth;
     private String address;
     private Boolean isActive;
     private List<TrainerSummaryDTO> trainers;
