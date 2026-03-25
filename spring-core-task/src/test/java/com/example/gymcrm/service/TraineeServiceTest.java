@@ -168,7 +168,7 @@ class TraineeServiceTest {
         when(traineeRepository.findByUserUsername("john.doe")).thenReturn(Optional.of(trainee));
         when(traineeRepository.save(trainee)).thenReturn(trainee);
 
-        Trainee result = traineeService.updateTrainee(validAuth, updated);
+        Trainee result = traineeService.updateTrainee(validAuth, "john.doe", updated);
 
         assertEquals("New Address", result.getAddress());
         assertEquals("Jane", result.getUser().getFirstName());
@@ -180,7 +180,7 @@ class TraineeServiceTest {
     void updateTrainee_ShouldThrowWhenAuthFails() {
         when(traineeRepository.findByUserUsername("john.doe")).thenReturn(Optional.of(trainee));
         assertThrows(IllegalArgumentException.class,
-                () -> traineeService.updateTrainee(new Auth("john.doe", "wrong"), new Trainee()));
+                () -> traineeService.updateTrainee(new Auth("john.doe", "wrong"), "john.doe", new Trainee()));
         verify(traineeRepository, never()).save(any());
     }
 
