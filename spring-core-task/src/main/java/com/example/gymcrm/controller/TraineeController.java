@@ -22,7 +22,7 @@ public class TraineeController {
     }
 
     @PostMapping
-    public Object register(@Valid @RequestBody TraineeRegistrationRequest req) {
+    public AuthCredentials register(@Valid @RequestBody TraineeRegistrationRequest req) {
         return facade.createTrainee(req);
     }
 

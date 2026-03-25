@@ -21,7 +21,7 @@ public class TrainerController {
     }
 
     @PostMapping
-    public Object register(@Valid @RequestBody TrainerRegistrationRequest req) {
+    public AuthCredentials register(@Valid @RequestBody TrainerRegistrationRequest req) {
         return facade.createTrainer(req);
     }
 

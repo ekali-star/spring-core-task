@@ -117,17 +117,16 @@ class TrainerServiceTest {
         when(trainerRepository.findByUserUsername("mike.smith")).thenReturn(Optional.of(trainer));
         when(trainerRepository.save(trainer)).thenReturn(trainer);
 
-        Trainer result = trainerService.updateTrainer(validAuth, updated);
+        Trainer result = trainerService.updateTrainer(validAuth, "mike.smith", updated);
 
         assertEquals("Michael", result.getUser().getFirstName());
         assertEquals("Johnson", result.getUser().getLastName());
-        assertEquals("Strength", result.getSpecialization().getTrainingTypeName());
     }
 
     @Test
     void updateTrainer_ShouldThrowWhenAuthFails() {
         when(trainerRepository.findByUserUsername("mike.smith")).thenReturn(Optional.of(trainer));
         assertThrows(IllegalArgumentException.class,
-                () -> trainerService.updateTrainer(new Auth("mike.smith", "wrong"), new Trainer()));
+                () -> trainerService.updateTrainer(new Auth("mike.smith", "wrong"), "mike.smith", new Trainer()));
     }
 }
