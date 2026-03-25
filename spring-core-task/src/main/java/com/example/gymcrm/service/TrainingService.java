@@ -30,14 +30,10 @@ public class TrainingService {
 
     public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
         Trainee trainee = traineeService.findByUsername(traineeUsername);
-        if (trainee == null) {
-            throw new IllegalArgumentException("Trainee not found: " + traineeUsername);
-        }
+        if (trainee == null) throw new IllegalArgumentException("Trainee not found: " + traineeUsername);
 
         Trainer trainer = trainerService.findByUsername(trainerUsername);
-        if (trainer == null) {
-            throw new IllegalArgumentException("Trainer not found: " + trainerUsername);
-        }
+        if (trainer == null) throw new IllegalArgumentException("Trainer not found: " + trainerUsername);
 
         if (!trainee.getUser().getIsActive() || !trainer.getUser().getIsActive()) {
             throw new IllegalArgumentException("Trainee or Trainer is not active");
@@ -49,31 +45,30 @@ public class TrainingService {
         return trainingRepository.save(training);
     }
 
-    public List<Training> getTraineeTrainings(Auth auth,
-                                              LocalDate fromDate,
-                                              LocalDate toDate,
-                                              String trainerName,
-                                              Long trainingTypeId) {
+    public List<Training> getTraineeTrainings(Auth auth, LocalDate fromDate, LocalDate toDate,
+                                              String trainerName, Long trainingTypeId) {
         if (!traineeService.authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
-
-        return trainingRepository.findTraineeTrainings(
-                auth.getUsername(), fromDate, toDate, trainerName, trainingTypeId
-        );
+        return getTraineeTrainings(auth.getUsername(), fromDate, toDate, trainerName, trainingTypeId);
     }
 
-    public List<Training> getTrainerTrainings(Auth auth,
-                                              LocalDate fromDate,
-                                              LocalDate toDate,
+    public List<Training> getTraineeTrainings(String username, LocalDate fromDate, LocalDate toDate,
+                                              String trainerName, Long trainingTypeId) {
+        return trainingRepository.findTraineeTrainings(username, fromDate, toDate, trainerName, trainingTypeId);
+    }
+
+    public List<Training> getTrainerTrainings(Auth auth, LocalDate fromDate, LocalDate toDate,
                                               String traineeName) {
         if (!trainerService.authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
+        return getTrainerTrainings(auth.getUsername(), fromDate, toDate, traineeName);
+    }
 
-        return trainingRepository.findTrainerTrainings(
-                auth.getUsername(), fromDate, toDate, traineeName
-        );
+    public List<Training> getTrainerTrainings(String username, LocalDate fromDate, LocalDate toDate,
+                                              String traineeName) {
+        return trainingRepository.findTrainerTrainings(username, fromDate, toDate, traineeName);
     }
 
     public Optional<Training> findById(Long id) {
