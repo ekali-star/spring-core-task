@@ -4,6 +4,7 @@ import com.example.gymcrm.dto.Auth;
 import com.example.gymcrm.dto.AuthCredentials;
 import com.example.gymcrm.model.User;
 import com.example.gymcrm.model.UserComparable;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,23 +17,18 @@ public abstract class UserService<T extends UserComparable> {
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
     protected abstract JpaRepository<T, Long> getRepository();
-
     protected abstract Collection<T> findAllUsers();
-
     protected abstract Long getId(T user);
-
     protected abstract Optional<T> findByUsernameOptional(String username);
 
+    @Transactional
     public AuthCredentials create(T entity) {
         User user = entity.getUser();
 
         String username = CredentialsGenerator.generateUsername(
                 user.getFirstName(),
                 user.getLastName(),
-                findAllUsers()
-                        .stream()
-                        .map(UserComparable::getUser)
-                        .toList()
+                findAllUsers().stream().map(UserComparable::getUser).toList()
         );
 
         String password = CredentialsGenerator.generatePassword();
@@ -73,10 +69,8 @@ public abstract class UserService<T extends UserComparable> {
         if (!authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
-
         T userEntity = findByUsernameOptional(auth.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
         userEntity.getUser().setPassword(newPassword);
         getRepository().save(userEntity);
     }
@@ -85,10 +79,12 @@ public abstract class UserService<T extends UserComparable> {
         if (!authenticate(auth)) {
             throw new IllegalArgumentException("Authentication failed");
         }
+        setActiveStatus(auth.getUsername(), active);
+    }
 
-        T userEntity = findByUsernameOptional(auth.getUsername())
+    public void setActiveStatus(String username, boolean active) {
+        T userEntity = findByUsernameOptional(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
         userEntity.getUser().setIsActive(active);
         getRepository().save(userEntity);
     }
