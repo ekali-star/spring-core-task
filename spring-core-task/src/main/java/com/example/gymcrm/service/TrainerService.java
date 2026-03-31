@@ -1,6 +1,7 @@
 package com.example.gymcrm.service;
 
 import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.metric.UserMetrics;
 import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.repository.TrainerRepository;
 import jakarta.transaction.Transactional;
@@ -16,7 +17,8 @@ public class TrainerService extends UserService<Trainer> {
 
     private final TrainerRepository trainerRepository;
 
-    public TrainerService(TrainerRepository trainerRepository) {
+    public TrainerService(TrainerRepository trainerRepository, UserMetrics userMetrics) {
+        super(userMetrics);
         this.trainerRepository = trainerRepository;
     }
 

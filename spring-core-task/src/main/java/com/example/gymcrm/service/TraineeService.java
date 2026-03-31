@@ -1,6 +1,7 @@
 package com.example.gymcrm.service;
 
 import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.metric.UserMetrics;
 import com.example.gymcrm.model.Trainee;
 import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.repository.TraineeRepository;
@@ -22,7 +23,8 @@ public class TraineeService extends UserService<Trainee> {
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
 
-    public TraineeService(TraineeRepository traineeRepository, TrainerRepository trainerRepository) {
+    public TraineeService(TraineeRepository traineeRepository, TrainerRepository trainerRepository, UserMetrics userMetrics) {
+        super(userMetrics);
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
     }
