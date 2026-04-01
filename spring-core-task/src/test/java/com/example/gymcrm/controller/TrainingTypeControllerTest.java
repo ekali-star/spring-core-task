@@ -2,56 +2,71 @@ package com.example.gymcrm.controller;
 
 import com.example.gymcrm.dto.response.TrainingTypeResponse;
 import com.example.gymcrm.facade.GymFacade;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
-@ExtendWith(MockitoExtension.class)
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(TrainingTypeController.class)
 class TrainingTypeControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private GymFacade facade;
 
-    private TrainingTypeController controller;
-
-    @BeforeEach
-    void setUp() {
-        controller = new TrainingTypeController(facade);
-    }
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    void getAll_ShouldReturnList() {
+    void getAll_success() throws Exception {
         List<TrainingTypeResponse> expected = List.of(
                 new TrainingTypeResponse(1L, "Cardio"),
                 new TrainingTypeResponse(2L, "Strength"),
                 new TrainingTypeResponse(3L, "Yoga")
         );
+
         when(facade.getAllTrainingTypes()).thenReturn(expected);
 
-        List<TrainingTypeResponse> result = controller.getAll();
+        mockMvc.perform(get("/api/training-types"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("Cardio"));
 
-        assertNotNull(result);
-        assertEquals(3, result.size());
-        assertEquals(1L, result.get(0).getId());
-        assertEquals("Cardio", result.get(0).getName());
         verify(facade).getAllTrainingTypes();
     }
 
     @Test
-    void getAll_ShouldReturnEmptyList() {
+    void getAll_emptyList() throws Exception {
         when(facade.getAllTrainingTypes()).thenReturn(List.of());
 
-        List<TrainingTypeResponse> result = controller.getAll();
+        mockMvc.perform(get("/api/training-types"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
         verify(facade).getAllTrainingTypes();
+    }
+
+    @Test
+    void getAll_serviceException() throws Exception {
+        when(facade.getAllTrainingTypes())
+                .thenThrow(new RuntimeException());
+
+        mockMvc.perform(get("/api/training-types"))
+                .andExpect(status().isInternalServerError());
     }
 }

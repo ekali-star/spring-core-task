@@ -3,6 +3,7 @@ package com.example.gymcrm.controller;
 import com.example.gymcrm.dto.request.ChangePasswordRequest;
 import com.example.gymcrm.dto.request.LoginRequest;
 import com.example.gymcrm.facade.GymFacade;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class AuthController {
 
     @PutMapping("/password")
     public ResponseEntity<Void> changePassword(
-            @RequestBody ChangePasswordRequest request) {
+            @Valid @RequestBody ChangePasswordRequest request) {
 
         facade.changePassword(request);
         return ResponseEntity.ok().build();

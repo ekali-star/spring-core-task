@@ -2,44 +2,55 @@ package com.example.gymcrm.controller;
 
 import com.example.gymcrm.dto.request.AddTrainingRequest;
 import com.example.gymcrm.facade.GymFacade;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-class TrainingControllerTest {
+@WebMvcTest(TrainingController.class)
+public class TrainingControllerTest {
 
-    @Mock
-    private GymFacade facade;
+    @Autowired
+    private MockMvc mockMvc;
 
-    private TrainingController controller;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        controller = new TrainingController(facade);
-    }
+    @MockBean
+    private GymFacade gymFacade;
 
     @Test
-    void add_ShouldReturnOk() {
+    void addTraining_success() throws Exception {
         AddTrainingRequest request = new AddTrainingRequest();
         request.setTraineeUsername("john.doe");
-        request.setTrainerUsername("mike.smith");
-        request.setTrainingName("Morning Run");
+        request.setTrainerUsername("jane.smith");
+        request.setTrainingName("Yoga");
         request.setTrainingDate(LocalDate.now());
         request.setTrainingDuration(60);
 
-        ResponseEntity<Void> response = controller.add(request);
+        doNothing().when(gymFacade).createTraining(any(AddTrainingRequest.class));
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(facade).createTraining(request);
+        mockMvc.perform(post("/api/trainings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void addTraining_invalidBody_shouldReturnBadRequest() throws Exception {
+        mockMvc.perform(post("/api/trainings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 }
