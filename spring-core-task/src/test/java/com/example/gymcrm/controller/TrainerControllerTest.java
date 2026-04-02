@@ -38,6 +38,7 @@ class TrainerControllerTest {
         TrainerRegistrationRequest req = new TrainerRegistrationRequest();
         req.setFirstName("Mike");
         req.setLastName("Smith");
+        req.setSpecializationId(1L);
 
         when(facade.createTrainer(any()))
                 .thenReturn(new AuthCredentials("mike", "pass"));
@@ -87,8 +88,10 @@ class TrainerControllerTest {
     void updateTrainer_success() throws Exception {
         UpdateTrainerRequest req = new UpdateTrainerRequest();
         req.setUsername("mike");
+        req.setPassword("newPass456");
         req.setFirstName("Mike");
         req.setLastName("Updated");
+        req.setIsActive(true);
 
         TrainerProfileResponse response = new TrainerProfileResponse();
         response.setUsername("mike");

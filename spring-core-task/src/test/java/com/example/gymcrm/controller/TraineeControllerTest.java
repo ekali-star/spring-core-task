@@ -40,6 +40,8 @@ class TraineeControllerTest {
         TraineeRegistrationRequest req = new TraineeRegistrationRequest();
         req.setFirstName("John");
         req.setLastName("Doe");
+        req.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        req.setAddress("123 Main St");
 
         when(facade.createTrainee(any()))
                 .thenReturn(new AuthCredentials("john", "pass"));
@@ -89,8 +91,12 @@ class TraineeControllerTest {
     void updateProfile_success() throws Exception {
         UpdateTraineeRequest req = new UpdateTraineeRequest();
         req.setUsername("john");
+        req.setPassword("newPass123");
         req.setFirstName("John");
         req.setLastName("Updated");
+        req.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        req.setAddress("456 New Address");
+        req.setIsActive(true);
 
         TraineeProfileResponse response = new TraineeProfileResponse();
         response.setUsername("john");

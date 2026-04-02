@@ -131,4 +131,9 @@ public class TraineeService extends UserService<Trainee> {
 
         traineeRepository.save(trainee);
     }
+
+    @Override
+    protected void afterCreate(Trainee entity) {
+        userMetrics.incrementTrainee();
+    }
 }

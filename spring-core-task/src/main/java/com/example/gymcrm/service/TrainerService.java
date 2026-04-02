@@ -55,4 +55,9 @@ public class TrainerService extends UserService<Trainer> {
 
         return trainerRepository.save(existing);
     }
+
+    @Override
+    protected void afterCreate(Trainer entity) {
+        userMetrics.incrementTrainer();
+    }
 }

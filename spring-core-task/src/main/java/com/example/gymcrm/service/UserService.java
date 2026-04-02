@@ -24,9 +24,12 @@ public abstract class UserService<T extends UserComparable> {
     protected abstract Long getId(T user);
     protected abstract Optional<T> findByUsernameOptional(String username);
 
-    private UserMetrics userMetrics;
+    protected UserMetrics userMetrics;
     protected UserService(UserMetrics userMetrics) {
         this.userMetrics = userMetrics;
+    }
+
+    protected void afterCreate(T entity) {
     }
 
     @Transactional
@@ -52,11 +55,7 @@ public abstract class UserService<T extends UserComparable> {
                 getId(saved),
                 username);
 
-        if (entity instanceof Trainee) {
-            userMetrics.incrementTrainee();
-        } else if (entity instanceof Trainer) {
-            userMetrics.incrementTrainer();
-        }
+        afterCreate(saved);
 
 
         return new AuthCredentials(username, password);
