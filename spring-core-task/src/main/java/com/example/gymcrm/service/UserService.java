@@ -2,6 +2,9 @@ package com.example.gymcrm.service;
 
 import com.example.gymcrm.dto.Auth;
 import com.example.gymcrm.dto.AuthCredentials;
+import com.example.gymcrm.metric.UserMetrics;
+import com.example.gymcrm.model.Trainee;
+import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.model.User;
 import com.example.gymcrm.model.UserComparable;
 import jakarta.transaction.Transactional;
@@ -20,6 +23,14 @@ public abstract class UserService<T extends UserComparable> {
     protected abstract Collection<T> findAllUsers();
     protected abstract Long getId(T user);
     protected abstract Optional<T> findByUsernameOptional(String username);
+
+    protected UserMetrics userMetrics;
+    protected UserService(UserMetrics userMetrics) {
+        this.userMetrics = userMetrics;
+    }
+
+    protected void afterCreate(T entity) {
+    }
 
     @Transactional
     public AuthCredentials create(T entity) {
@@ -43,6 +54,9 @@ public abstract class UserService<T extends UserComparable> {
                 getClass().getSimpleName().replace("Service", ""),
                 getId(saved),
                 username);
+
+        afterCreate(saved);
+
 
         return new AuthCredentials(username, password);
     }

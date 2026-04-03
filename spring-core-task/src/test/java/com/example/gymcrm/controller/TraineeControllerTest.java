@@ -6,194 +6,195 @@ import com.example.gymcrm.dto.response.TraineeProfileResponse;
 import com.example.gymcrm.dto.response.TrainerSummaryDTO;
 import com.example.gymcrm.dto.response.TrainingResponse;
 import com.example.gymcrm.facade.GymFacade;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(TraineeController.class)
 class TraineeControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private GymFacade facade;
 
-    private TraineeController controller;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    private TraineeRegistrationRequest registrationRequest;
-    private UpdateTraineeRequest updateRequest;
-    private ActivateRequest activateRequest;
-    private UpdateTraineeTrainersRequest updateTrainersRequest;
-    private TraineeTrainingQueryRequest trainingQueryRequest;
-    private TraineeProfileResponse profileResponse;
-    private List<TrainerSummaryDTO> trainerSummaries;
-    private List<TrainingResponse> trainingResponses;
+    @Test
+    void register_success() throws Exception {
+        TraineeRegistrationRequest req = new TraineeRegistrationRequest();
+        req.setFirstName("John");
+        req.setLastName("Doe");
+        req.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        req.setAddress("123 Main St");
 
-    @BeforeEach
-    void setUp() {
-        controller = new TraineeController(facade);
+        when(facade.createTrainee(any()))
+                .thenReturn(new AuthCredentials("john", "pass"));
 
-        registrationRequest = new TraineeRegistrationRequest();
-        registrationRequest.setFirstName("John");
-        registrationRequest.setLastName("Doe");
-        registrationRequest.setDateOfBirth(LocalDate.of(1990, 1, 1));
-        registrationRequest.setAddress("123 Main St");
+        mockMvc.perform(post("/api/trainees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("john"));
 
-        updateRequest = new UpdateTraineeRequest();
-        updateRequest.setUsername("john.doe");
-        updateRequest.setFirstName("Jane");
-        updateRequest.setLastName("Smith");
-        updateRequest.setDateOfBirth(LocalDate.of(1991, 2, 2));
-        updateRequest.setAddress("456 Oak St");
-
-        activateRequest = new ActivateRequest();
-        activateRequest.setUsername("john.doe");
-        activateRequest.setIsActive(true);
-
-        updateTrainersRequest = new UpdateTraineeTrainersRequest();
-        updateTrainersRequest.setUsername("john.doe");
-        updateTrainersRequest.setTrainerUsernames(List.of("trainer1", "trainer2"));
-
-        trainingQueryRequest = new TraineeTrainingQueryRequest();
-        trainingQueryRequest.setPeriodFrom(LocalDate.of(2024, 1, 1));
-        trainingQueryRequest.setPeriodTo(LocalDate.of(2024, 12, 31));
-        trainingQueryRequest.setTrainerName("Mike");
-        trainingQueryRequest.setTrainingTypeId(1L);
-
-        profileResponse = new TraineeProfileResponse(
-                "john.doe", "John", "Doe",
-                LocalDate.of(1990, 1, 1), "123 Main St",
-                true, List.of()
-        );
-
-        trainerSummaries = List.of(
-                new TrainerSummaryDTO("trainer1", "John", "Doe", "Cardio")
-        );
-
-        trainingResponses = List.of(
-                new TrainingResponse("Morning Run", LocalDate.now(), "Cardio", 60, "trainer1")
-        );
+        verify(facade).createTrainee(any());
     }
 
     @Test
-    void register_ShouldReturnAuthCredentials() {
-        AuthCredentials expected = new AuthCredentials("john.doe", "password");
-        when(facade.createTrainee(registrationRequest)).thenReturn(expected);
-
-        AuthCredentials result = controller.register(registrationRequest);
-
-        assertNotNull(result);
-        assertEquals(expected, result);
-        verify(facade).createTrainee(registrationRequest);
+    void register_validationFail() throws Exception {
+        mockMvc.perform(post("/api/trainees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void get_ShouldReturnTraineeProfile() {
-        when(facade.getTraineeByUsername(any(AuthCredentials.class), eq("john.doe")))
-                .thenReturn(profileResponse);
+    void getProfile_success() throws Exception {
+        TraineeProfileResponse response = new TraineeProfileResponse();
+        response.setUsername("john");
 
-        TraineeProfileResponse result = controller.get("john.doe", "john.doe", "password");
+        when(facade.getTraineeByUsername(any(), eq("john")))
+                .thenReturn(response);
 
-        assertNotNull(result);
-        assertEquals("john.doe", result.getUsername());
-        assertEquals("John", result.getFirstName());
-        verify(facade).getTraineeByUsername(any(AuthCredentials.class), eq("john.doe"));
+        mockMvc.perform(get("/api/trainees")
+                        .param("username", "john")
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
+
+        verify(facade).getTraineeByUsername(any(), eq("john"));
     }
 
     @Test
-    void update_ShouldReturnUpdatedProfile() {
-        when(facade.updateTrainee(any(AuthCredentials.class), eq("john.doe"), eq(updateRequest)))
-                .thenReturn(profileResponse);
-
-        TraineeProfileResponse result = controller.update(updateRequest, "john.doe", "password");
-
-        assertNotNull(result);
-        verify(facade).updateTrainee(any(AuthCredentials.class), eq("john.doe"), eq(updateRequest));
+    void getProfile_missingHeader() throws Exception {
+        mockMvc.perform(get("/api/trainees")
+                        .param("username", "john"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void delete_ShouldCallFacade() {
-        controller.delete("john.doe", "john.doe", "password");
+    void updateProfile_success() throws Exception {
+        UpdateTraineeRequest req = new UpdateTraineeRequest();
+        req.setUsername("john");
+        req.setPassword("newPass123");
+        req.setFirstName("John");
+        req.setLastName("Updated");
+        req.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        req.setAddress("456 New Address");
+        req.setIsActive(true);
 
-        verify(facade).deleteTrainee(any(AuthCredentials.class), eq("john.doe"));
+        TraineeProfileResponse response = new TraineeProfileResponse();
+        response.setUsername("john");
+
+        when(facade.updateTrainee(any(), eq("john"), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(put("/api/trainees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
+
+        verify(facade).updateTrainee(any(), eq("john"), any());
     }
 
     @Test
-    void activate_ShouldCallFacade() {
-        controller.activate(activateRequest, "john.doe", "password");
+    void deleteTrainee_success() throws Exception {
+        doNothing().when(facade).deleteTrainee(any(), eq("john"));
 
-        verify(facade).setTraineeActiveStatus(any(AuthCredentials.class), eq("john.doe"), eq(true));
+        mockMvc.perform(delete("/api/trainees")
+                        .param("username", "john")
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
+
+        verify(facade).deleteTrainee(any(), eq("john"));
     }
 
     @Test
-    void unassigned_ShouldReturnList() {
-        when(facade.getUnassignedTrainers(any(AuthCredentials.class), eq("john.doe")))
-                .thenReturn(trainerSummaries);
+    void activateTrainee_success() throws Exception {
+        ActivateRequest req = new ActivateRequest();
+        req.setUsername("john");
+        req.setIsActive(true);
 
-        List<TrainerSummaryDTO> result = controller.unassigned("john.doe", "john.doe", "password");
+        doNothing().when(facade).setTraineeActiveStatus(any(), eq("john"), eq(true));
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(facade).getUnassignedTrainers(any(AuthCredentials.class), eq("john.doe"));
+        mockMvc.perform(patch("/api/trainees/activate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
+
+        verify(facade).setTraineeActiveStatus(any(), eq("john"), eq(true));
     }
 
     @Test
-    void updateTrainers_ShouldReturnUpdatedList() {
-        when(facade.updateTraineeTrainers(any(AuthCredentials.class), eq("john.doe"), eq(List.of("trainer1", "trainer2"))))
-                .thenReturn(trainerSummaries);
+    void getUnassignedTrainers_success() throws Exception {
+        List<TrainerSummaryDTO> trainers = Arrays.asList(new TrainerSummaryDTO());
 
-        List<TrainerSummaryDTO> result = controller.updateTrainers(updateTrainersRequest, "john.doe", "password");
+        when(facade.getUnassignedTrainers(any(), eq("john")))
+                .thenReturn(trainers);
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(facade).updateTraineeTrainers(any(AuthCredentials.class), eq("john.doe"), eq(List.of("trainer1", "trainer2")));
+        mockMvc.perform(get("/api/trainees/unassigned-trainers")
+                        .param("username", "john")
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
+
+        verify(facade).getUnassignedTrainers(any(), eq("john"));
     }
 
     @Test
-    void getTrainings_ShouldReturnList() {
-        when(facade.getTraineeTrainings(
-                any(AuthCredentials.class), eq("john.doe"),
-                eq(trainingQueryRequest.getPeriodFrom()),
-                eq(trainingQueryRequest.getPeriodTo()),
-                eq(trainingQueryRequest.getTrainerName()),
-                eq(trainingQueryRequest.getTrainingTypeId())))
-                .thenReturn(trainingResponses);
+    void updateTrainers_success() throws Exception {
+        UpdateTraineeTrainersRequest req = new UpdateTraineeTrainersRequest();
+        req.setUsername("john");
+        req.setTrainerUsernames(Arrays.asList("trainer1"));
 
-        List<TrainingResponse> result = controller.getTrainings(
-                "john.doe", trainingQueryRequest, "john.doe", "password");
+        List<TrainerSummaryDTO> trainers = Arrays.asList(new TrainerSummaryDTO());
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(facade).getTraineeTrainings(
-                any(AuthCredentials.class), eq("john.doe"),
-                eq(trainingQueryRequest.getPeriodFrom()),
-                eq(trainingQueryRequest.getPeriodTo()),
-                eq(trainingQueryRequest.getTrainerName()),
-                eq(trainingQueryRequest.getTrainingTypeId()));
+        when(facade.updateTraineeTrainers(any(), eq("john"), anyList()))
+                .thenReturn(trainers);
+
+        mockMvc.perform(put("/api/trainees/trainers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
+
+        verify(facade).updateTraineeTrainers(any(), eq("john"), anyList());
     }
 
     @Test
-    void getTrainings_ShouldHandleNullQueryParameters() {
-        TraineeTrainingQueryRequest emptyQuery = new TraineeTrainingQueryRequest();
+    void getTrainings_success() throws Exception {
+        List<TrainingResponse> trainings = Arrays.asList(new TrainingResponse());
 
-        when(facade.getTraineeTrainings(
-                any(AuthCredentials.class), eq("john.doe"),
-                isNull(), isNull(), isNull(), isNull()))
-                .thenReturn(trainingResponses);
+        when(facade.getTraineeTrainings(any(), eq("john"), any(), any(), any(), any()))
+                .thenReturn(trainings);
 
-        List<TrainingResponse> result = controller.getTrainings(
-                "john.doe", emptyQuery, "john.doe", "password");
+        mockMvc.perform(get("/api/trainees/trainings")
+                        .param("username", "john")
+                        .header("authUsername", "john")
+                        .header("authPassword", "pass"))
+                .andExpect(status().isOk());
 
-        assertNotNull(result);
-        verify(facade).getTraineeTrainings(
-                any(AuthCredentials.class), eq("john.doe"),
-                isNull(), isNull(), isNull(), isNull());
+        verify(facade).getTraineeTrainings(any(), eq("john"), any(), any(), any(), any());
     }
 }
