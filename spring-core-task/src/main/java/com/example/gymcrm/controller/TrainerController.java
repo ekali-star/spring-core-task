@@ -27,24 +27,16 @@ public class TrainerController {
 
     @GetMapping
     public TrainerProfileResponse get(
-            @RequestParam String username,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @RequestParam String username) {
         return facade.getTrainerByUsername(
-                new AuthCredentials(authUsername, authPassword),
                 username
         );
     }
 
     @PutMapping
     public TrainerProfileResponse update(
-            @Valid @RequestBody UpdateTrainerRequest req,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @Valid @RequestBody UpdateTrainerRequest req) {
         return facade.updateTrainer(
-                new AuthCredentials(authUsername, authPassword),
                 req.getUsername(),
                 req
         );
@@ -52,12 +44,8 @@ public class TrainerController {
 
     @PatchMapping("/activate")
     public void activate(
-            @Valid @RequestBody ActivateRequest req,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @Valid @RequestBody ActivateRequest req) {
         facade.setTrainerActiveStatus(
-                new AuthCredentials(authUsername, authPassword),
                 req.getUsername(),
                 req.getIsActive()
         );
@@ -66,12 +54,8 @@ public class TrainerController {
     @GetMapping("/trainings")
     public List<TrainingResponse> getTrainings(
             @RequestParam String username,
-            @ModelAttribute TrainerTrainingQueryRequest query,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @ModelAttribute TrainerTrainingQueryRequest query) {
         return facade.getTrainerTrainings(
-                new AuthCredentials(authUsername, authPassword),
                 username,
                 query.getPeriodFrom(),
                 query.getPeriodTo(),
