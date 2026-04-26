@@ -1,6 +1,7 @@
 package com.example.gymcrm.service;
 
 import com.example.gymcrm.dto.Auth;
+import com.example.gymcrm.metric.TrainingMetrics;
 import com.example.gymcrm.model.Trainee;
 import com.example.gymcrm.model.Trainer;
 import com.example.gymcrm.model.Training;
@@ -19,13 +20,15 @@ public class TrainingService {
     private final TrainingRepository trainingRepository;
     private final TraineeService traineeService;
     private final TrainerService trainerService;
+    private final TrainingMetrics trainingMetrics;
 
     public TrainingService(TrainingRepository trainingRepository,
                            TraineeService traineeService,
-                           TrainerService trainerService) {
+                           TrainerService trainerService, TrainingMetrics trainingMetrics) {
         this.trainingRepository = trainingRepository;
         this.traineeService = traineeService;
         this.trainerService = trainerService;
+        this.trainingMetrics = trainingMetrics;
     }
 
     public Training createTraining(String traineeUsername, String trainerUsername, Training training) {
@@ -41,6 +44,8 @@ public class TrainingService {
 
         training.setTrainee(trainee);
         training.setTrainer(trainer);
+
+        trainingMetrics.increment();
 
         return trainingRepository.save(training);
     }
