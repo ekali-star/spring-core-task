@@ -34,8 +34,8 @@ public class GymFacade {
         }
     }
 
-    public void changePassword(ChangePasswordRequest req) {
-        Auth auth = new Auth(req.getUsername(), req.getOldPassword());
+    public void changePassword(String username, ChangePasswordRequest req) {
+        Auth auth = new Auth(username, req.getOldPassword());
 
         if (traineeService.authenticate(auth)) {
             traineeService.changePassword(auth, req.getNewPassword());

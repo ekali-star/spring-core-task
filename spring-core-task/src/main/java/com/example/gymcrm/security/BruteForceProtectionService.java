@@ -1,44 +1,50 @@
 package com.example.gymcrm.security;
 
+import com.example.gymcrm.model.User;
+import com.example.gymcrm.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class BruteForceProtectionService {
 
     private static final int MAX_ATTEMPTS = 3;
-    private static final long BLOCK_DURATION_MS = 5 * 60 * 1000L;
+    private static final long BLOCK_DURATION_SECONDS = 300;
 
-    private record AttemptInfo(int count, Instant blockedUntil) {
+    private final UserRepository userRepository;
+
+    public BruteForceProtectionService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
-    private final ConcurrentHashMap<String, AttemptInfo> attempts = new ConcurrentHashMap<>();
-
-    public void loginSucceeded(String username) {
-        attempts.remove(username);
+    public void loginSucceeded(User user) {
+        user.setFailedAttempts(0);
+        user.setBlockedUntil(null);
+        userRepository.save(user);
     }
 
-    public void loginFailed(String username) {
-        attempts.merge(username,
-                new AttemptInfo(1, null),
-                (existing, ignored) -> {
-                    int newCount = existing.count() + 1;
-                    Instant blocked = newCount >= MAX_ATTEMPTS
-                            ? Instant.now().plusMillis(BLOCK_DURATION_MS)
-                            : existing.blockedUntil();
-                    return new AttemptInfo(newCount, blocked);
-                });
+    public void loginFailed(User user) {
+        int newAttempts = user.getFailedAttempts() + 1;
+        user.setFailedAttempts(newAttempts);
+
+        if (newAttempts >= MAX_ATTEMPTS) {
+            user.setBlockedUntil(Instant.now().plusSeconds(BLOCK_DURATION_SECONDS));
+        }
+
+        userRepository.save(user);
     }
 
-    public boolean isBlocked(String username) {
-        AttemptInfo info = attempts.get(username);
-        if (info == null || info.blockedUntil() == null) return false;
-        if (Instant.now().isAfter(info.blockedUntil())) {
-            attempts.remove(username);
+    public boolean isBlocked(User user) {
+        if (user.getBlockedUntil() == null) return false;
+
+        if (Instant.now().isAfter(user.getBlockedUntil())) {
+            user.setFailedAttempts(0);
+            user.setBlockedUntil(null);
+            userRepository.save(user);
             return false;
         }
+
         return true;
     }
 }

@@ -1,11 +1,14 @@
 package com.example.gymcrm.security;
 
 import com.example.gymcrm.config.JwtProperties;
+import com.example.gymcrm.model.User;
+import com.example.gymcrm.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.*;
 import com.nimbusds.jwt.*;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,10 +17,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JwtService {
 
     private final JwtProperties props;
-    private final Set<String> blacklistedJtis = ConcurrentHashMap.newKeySet();
+    private final UserRepository userRepository;
 
-    public JwtService(JwtProperties props) {
+    public JwtService(JwtProperties props, UserRepository userRepository) {
         this.props = props;
+        this.userRepository = userRepository;
     }
 
     public String generateToken(String username) {
@@ -43,12 +47,19 @@ public class JwtService {
         try {
             SignedJWT jwt = SignedJWT.parse(token);
             JWSVerifier verifier = new MACVerifier(props.getSecret().getBytes());
-            if (!jwt.verify(verifier)) throw new RuntimeException("Invalid JWT signature");
-
+            if (!jwt.verify(verifier)) {
+                throw new RuntimeException("Invalid JWT signature");
+            }
             JWTClaimsSet claims = jwt.getJWTClaimsSet();
-            if (claims.getExpirationTime().before(new Date())) throw new RuntimeException("JWT expired");
-            if (blacklistedJtis.contains(claims.getJWTID())) throw new RuntimeException("JWT invalidated");
-
+            if (claims.getExpirationTime().before(new Date())) {
+                throw new RuntimeException("JWT expired");
+            }
+            String username = claims.getSubject();
+            User user = userRepository.findByUsername(username).orElseThrow();
+            if (user.getLastLogout() != null &&
+                    claims.getIssueTime().toInstant().isBefore(user.getLastLogout())) {
+                throw new RuntimeException("JWT invalidated (logout)");
+            }
             return claims;
         } catch (RuntimeException e) {
             throw e;
@@ -57,12 +68,9 @@ public class JwtService {
         }
     }
 
-    public void blacklist(String token) {
-        try {
-            SignedJWT jwt = SignedJWT.parse(token);
-            blacklistedJtis.add(jwt.getJWTClaimsSet().getJWTID());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to blacklist token", e);
-        }
+    public void logout(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow();
+        user.setLastLogout(Instant.now());
+        userRepository.save(user);
     }
 }
