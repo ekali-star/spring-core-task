@@ -3,6 +3,10 @@ package com.example.gymcrm.controller;
 import com.example.gymcrm.dto.request.ChangePasswordRequest;
 import com.example.gymcrm.dto.request.LoginRequest;
 import com.example.gymcrm.facade.GymFacade;
+import com.example.gymcrm.model.User;
+import com.example.gymcrm.repository.UserRepository;
+import com.example.gymcrm.security.BruteForceProtectionService;
+import com.example.gymcrm.security.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
@@ -12,6 +16,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -27,47 +33,125 @@ class AuthControllerTest {
 
     @MockBean
     private GymFacade facade;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    @MockBean
+    private JwtService jwtService;
+    @MockBean
+    private BruteForceProtectionService bruteForce;
+    @MockBean
+    private UserRepository userRepository;
 
     @Test
     void login_success() throws Exception {
-        mockMvc.perform(get("/api/auth/login")
-                        .param("username", "john")
-                        .param("password", "pass"))
+        User user = User.builder().username("u").build();
+
+        when(userRepository.findByUsername("u")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken("u")).thenReturn("token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "u")
+                        .param("password", "p"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token"));
+    }
+
+    @Test
+    void login_blocked() throws Exception {
+        User user = User.builder().username("u").build();
+
+        when(userRepository.findByUsername("u")).thenReturn(Optional.of(user));
+        when(bruteForce.isBlocked(user)).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "u")
+                        .param("password", "p"))
+                .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void login_fail() throws Exception {
+        User user = User.builder().username("u").build();
+
+        when(userRepository.findByUsername("u")).thenReturn(Optional.of(user));
+        doThrow(new RuntimeException()).when(facade).login(any());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "u")
+                        .param("password", "p"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void login_success_recordsLoginSucceeded() throws Exception {
+        User user = User.builder().username("u").build();
+
+        when(userRepository.findByUsername("u")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken("u")).thenReturn("token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "u")
+                        .param("password", "p"))
                 .andExpect(status().isOk());
 
-        verify(facade).login(any(LoginRequest.class));
+        verify(bruteForce).loginSucceeded(user);
     }
 
     @Test
-    void login_missingParams_shouldFail() throws Exception {
-        mockMvc.perform(get("/api/auth/login"))
-                .andExpect(status().isBadRequest());
+    void login_fail_recordsLoginFailed() throws Exception {
+        User user = User.builder().username("u").build();
+
+        when(userRepository.findByUsername("u")).thenReturn(Optional.of(user));
+        doThrow(new RuntimeException()).when(facade).login(any());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "u")
+                        .param("password", "p"))
+                .andExpect(status().isUnauthorized());
+
+        verify(bruteForce).loginFailed(user);
     }
 
     @Test
-    void changePassword_success() throws Exception {
-        ChangePasswordRequest req = new ChangePasswordRequest();
-        req.setUsername("john");
-        req.setOldPassword("old");
-        req.setNewPassword("new");
+    void login_blocked_doesNotCallFacade() throws Exception {
+        User user = User.builder().username("u").build();
 
-        mockMvc.perform(put("/api/auth/password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk());
+        when(userRepository.findByUsername("u")).thenReturn(Optional.of(user));
+        when(bruteForce.isBlocked(user)).thenReturn(true);
 
-        verify(facade).changePassword(any());
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "u")
+                        .param("password", "p"))
+                .andExpect(status().isTooManyRequests());
+
+        verify(facade, never()).login(any());
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
-    void changePassword_invalidBody_shouldFail() throws Exception {
-        mockMvc.perform(put("/api/auth/password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest());
+    void login_unknownUser_succeeds_withoutBruteForceTracking() throws Exception {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+        when(jwtService.generateToken("ghost")).thenReturn("token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "ghost")
+                        .param("password", "p"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("token"));
+
+        verify(bruteForce, never()).loginSucceeded(any());
+        verify(bruteForce, never()).loginFailed(any());
+    }
+
+    @Test
+    void login_unknownUser_fails_withoutBruteForceTracking() throws Exception {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+        doThrow(new RuntimeException()).when(facade).login(any());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "ghost")
+                        .param("password", "wrong"))
+                .andExpect(status().isUnauthorized());
+
+        verify(bruteForce, never()).loginFailed(any());
     }
 
 }

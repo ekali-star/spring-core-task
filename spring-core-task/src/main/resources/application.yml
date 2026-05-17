@@ -1,6 +1,8 @@
 spring:
   profiles:
     active: local
+  jpa:
+    open-in-view: false
 
 management:
   endpoints:
@@ -14,3 +16,21 @@ management:
 logging:
   level:
     com.example.gymcrm: DEBUG
+
+jwt:
+  secret: your-256-bit-secret-key-here-must-be-at-least-32-chars
+  expiration-ms: 86400000
+
+cors:
+  allowed-origins:
+    - http://localhost:3000
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - Authorization
+    - Content-Type
