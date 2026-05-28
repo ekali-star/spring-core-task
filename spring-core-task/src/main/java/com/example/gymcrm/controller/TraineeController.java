@@ -28,24 +28,14 @@ public class TraineeController {
 
     @GetMapping
     public TraineeProfileResponse get(
-            @RequestParam String username,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
-        return facade.getTraineeByUsername(
-                new AuthCredentials(authUsername, authPassword),
-                username
-        );
+            @RequestParam String username) {
+        return facade.getTraineeByUsername(username);
     }
 
     @PutMapping
     public TraineeProfileResponse update(
-            @Valid @RequestBody UpdateTraineeRequest req,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @Valid @RequestBody UpdateTraineeRequest req) {
         return facade.updateTrainee(
-                new AuthCredentials(authUsername, authPassword),
                 req.getUsername(),
                 req
         );
@@ -53,24 +43,16 @@ public class TraineeController {
 
     @DeleteMapping
     public void delete(
-            @RequestParam String username,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @RequestParam String username) {
         facade.deleteTrainee(
-                new AuthCredentials(authUsername, authPassword),
                 username
         );
     }
 
     @PatchMapping("/activate")
     public void activate(
-            @Valid @RequestBody ActivateRequest req,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @Valid @RequestBody ActivateRequest req) {
         facade.setTraineeActiveStatus(
-                new AuthCredentials(authUsername, authPassword),
                 req.getUsername(),
                 req.getIsActive()
         );
@@ -78,24 +60,16 @@ public class TraineeController {
 
     @GetMapping("/unassigned-trainers")
     public List<TrainerSummaryDTO> unassigned(
-            @RequestParam String username,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @RequestParam String username) {
         return facade.getUnassignedTrainers(
-                new AuthCredentials(authUsername, authPassword),
                 username
         );
     }
 
     @PutMapping("/trainers")
     public List<TrainerSummaryDTO> updateTrainers(
-            @Valid @RequestBody UpdateTraineeTrainersRequest req,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @Valid @RequestBody UpdateTraineeTrainersRequest req) {
         return facade.updateTraineeTrainers(
-                new AuthCredentials(authUsername, authPassword),
                 req.getUsername(),
                 req.getTrainerUsernames()
         );
@@ -104,12 +78,8 @@ public class TraineeController {
     @GetMapping("/trainings")
     public List<TrainingResponse> getTrainings(
             @RequestParam String username,
-            @ModelAttribute TraineeTrainingQueryRequest query,
-            @RequestHeader String authUsername,
-            @RequestHeader String authPassword) {
-
+            @ModelAttribute TraineeTrainingQueryRequest query) {
         return facade.getTraineeTrainings(
-                new AuthCredentials(authUsername, authPassword),
                 username,
                 query.getPeriodFrom(),
                 query.getPeriodTo(),
