@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: gymcrm
   profiles:
     active: local
   jpa:
@@ -34,3 +36,22 @@ cors:
   allowed-headers:
     - Authorization
     - Content-Type
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+auth-server:
+  token-url: http://localhost:9000/oauth2/token
+  client-id: gymcrm
+  client-secret: gymcrm-secret
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      trainerWorkload:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2

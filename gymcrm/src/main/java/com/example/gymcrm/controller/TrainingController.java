@@ -21,4 +21,10 @@ public class TrainingController {
         facade.createTraining(req);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        facade.deleteTraining(id);
+        return ResponseEntity.ok().build();
+    }
 }

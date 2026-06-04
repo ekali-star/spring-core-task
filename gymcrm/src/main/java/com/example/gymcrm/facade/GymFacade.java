@@ -230,4 +230,8 @@ public class GymFacade {
                 t.getTrainee().getUser().getUsername()
         );
     }
+
+    public void deleteTraining(Long id) {
+        trainingService.deleteTraining(id);
+    }
 }
